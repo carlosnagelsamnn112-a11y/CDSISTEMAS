@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panadería El Trigal — Pan de horno de leña, cada mañana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7EFDF;
+    --crust:#5B3A22;
+    --wheat:#C89B3C;
+    --charcoal:#2A2119;
+    --jam:#A8452F;
+    --line: rgba(42,33,25,0.14);
+    --radius: 3px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--charcoal);
+    font-family:'Karla', sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Fraunces', serif; font-weight:700; letter-spacing:-0.01em;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 28px;}
+  img{max-width:100%; display:block;}
+
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(42,33,25,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    opacity:0.5;
+  }
+
+  header{position:sticky; top:0; z-index:50; background:var(--cream); border-bottom:1px solid var(--line);}
+  .header-row{display:flex; align-items:center; justify-content:space-between; padding:18px 0;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces', serif; font-weight:700; font-size:1.25rem;}
+  .brand-mark{
+    width:38px; height:38px; border-radius:50%; background:var(--crust); color:var(--cream);
+    display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-size:1.1rem;
+  }
+  nav{display:flex; gap:32px; font-weight:600; font-size:0.95rem;}
+  nav a{position:relative; padding-bottom:4px; background:none; border:none; font-family:inherit; font-size:inherit; font-weight:inherit; color:inherit;}
+  nav a::after{content:""; position:absolute; left:0; bottom:0; width:0; height:2px; background:var(--jam); transition:width .25s ease;}
+  nav a:hover::after{width:100%;}
+  .header-actions{display:flex; align-items:center; gap:12px;}
+  .btn{display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:var(--radius); font-weight:700; font-size:0.92rem; border:1.5px solid var(--crust); transition:all .2s ease; background:none;}
+  .btn-primary{background:var(--crust); color:var(--cream);}
+  .btn-primary:hover{background:var(--jam); border-color:var(--jam);}
+  .btn-outline{background:transparent; color:var(--crust);}
+  .btn-outline:hover{background:var(--crust); color:var(--cream);}
+  .hamburger{display:none; flex-direction:column; gap:5px; background:none; border:none; padding:6px;}
+  .hamburger span{width:24px; height:2px; background:var(--charcoal);}
+
+  .mobile-nav{
+    display:none; position:fixed; inset:0; background:var(--cream); z-index:60;
+    flex-direction:column; padding:24px 28px; gap:6px;
+  }
+  .mobile-nav.open{display:flex;}
+  .mobile-nav-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;}
+  .mobile-nav a, .mobile-nav button.mn-link{
+    font-family:'Fraunces'; font-size:1.5rem; font-weight:600; padding:14px 0; border-bottom:1px solid var(--line);
+    background:none; border-left:none; border-right:none; border-top:none; text-align:left; color:inherit;
+  }
+
+  .hero{padding:88px 0 70px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:60px; align-items:center; position:relative; z-index:1;}
+  .eyebrow{font-family:'Karla'; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; font-size:0.78rem; color:var(--jam); margin-bottom:18px; display:flex; align-items:center; gap:10px;}
+  .eyebrow::before{content:""; width:26px; height:2px; background:var(--jam);}
+  .hero h1{font-size:3.4rem; line-height:1.06; margin-bottom:22px;}
+  .hero h1 em{font-style:italic; color:var(--jam);}
+  .hero-desc{font-size:1.12rem; max-width:460px; color:#4a3c2e; margin-bottom:32px;}
+  .hero-actions{display:flex; gap:14px; flex-wrap:wrap;}
+
+  .loaf-art{position:relative; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;}
+  .loaf-art svg{width:100%; height:100%;}
+  .hours-tag{position:absolute; bottom:-14px; left:-14px; background:var(--charcoal); color:var(--cream); padding:14px 20px; border-radius:var(--radius); font-size:0.85rem; font-weight:600; box-shadow:0 12px 30px rgba(42,33,25,0.25);}
+  .hours-tag strong{display:block; font-family:'Fraunces'; font-size:1rem; font-weight:600; color:var(--wheat);}
+
+  section{padding:80px 0; position:relative; z-index:1;}
+  .section-head{max-width:600px; margin-bottom:48px;}
+  .section-eyebrow{font-weight:700; letter-spacing:0.12em; text-transform:uppercase; font-size:0.78rem; color:var(--jam); margin-bottom:12px;}
+  .section-title{font-size:2.1rem;}
+
+  .menu{background:var(--charcoal); color:var(--cream);}
+  .menu .section-eyebrow{color:var(--wheat);}
+  .menu-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:1px; background:rgba(247,239,223,0.15); border:1px solid rgba(247,239,223,0.15);}
+  .menu-item{background:var(--charcoal); padding:26px 28px; display:flex; justify-content:space-between; gap:20px; align-items:center;}
+  .menu-item h3{font-size:1.15rem; font-weight:600; margin-bottom:6px;}
+  .menu-item p{font-size:0.88rem; color:#c9bda9;}
+  .menu-price{font-family:'Fraunces'; font-weight:700; color:var(--wheat); font-size:1.15rem; white-space:nowrap;}
+  .menu-item-add{display:flex; align-items:center; gap:10px;}
+  .qty-btn{width:26px; height:26px; border-radius:50%; border:1px solid rgba(247,239,223,0.35); background:none; color:var(--cream); font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center;}
+  .qty-val{font-family:'IBM Plex Mono', monospace; min-width:16px; text-align:center; font-size:0.9rem;}
+
+  .process-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:32px;}
+  .process-card{background:#fffaf0; border:1px solid var(--line); border-radius:var(--radius); padding:28px; position:relative;}
+  .process-card .num{font-family:'Fraunces'; font-style:italic; font-size:2.4rem; color:var(--wheat); margin-bottom:8px; display:block;}
+  .process-card h3{font-size:1.1rem; margin-bottom:8px;}
+  .process-card p{font-size:0.92rem; color:#5a4c3c;}
+
+  /* TESTIMONIAL CAROUSEL */
+  .strip{background:var(--wheat); color:var(--charcoal); padding:46px 0; text-align:center; overflow:hidden;}
+  .strip h2{font-size:1.6rem; max-width:700px; margin:0 auto; line-height:1.4; min-height:2.8em; display:flex; align-items:center; justify-content:center;}
+  .strip .author{margin-top:14px; font-weight:700; font-size:0.85rem; letter-spacing:0.04em;}
+  .strip-dots{display:flex; gap:8px; justify-content:center; margin-top:20px;}
+  .strip-dot{width:8px; height:8px; border-radius:50%; background:rgba(42,33,25,0.25); border:none; padding:0;}
+  .strip-dot.active{background:var(--charcoal);}
+
+  /* FAQ */
+  .faq-list{max-width:760px;}
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-q{width:100%; display:flex; justify-content:space-between; align-items:center; padding:20px 0; background:none; border:none; text-align:left; font-family:'Fraunces'; font-size:1.05rem; font-weight:600; color:var(--charcoal);}
+  .faq-q .plus{font-family:'Karla'; font-size:1.4rem; font-weight:400; color:var(--jam); transition:transform .2s ease;}
+  .faq-item.open .plus{transform:rotate(45deg);}
+  .faq-a{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+  .faq-a p{padding-bottom:20px; font-size:0.94rem; color:#5a4c3c; max-width:600px;}
+  .faq-item.open .faq-a{max-height:200px;}
+
+  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:start;}
+  .info-list{list-style:none;}
+  .info-list li{display:flex; gap:16px; padding:18px 0; border-bottom:1px solid var(--line);}
+  .info-list li:first-child{padding-top:0;}
+  .info-list .label{font-weight:700; min-width:110px; color:var(--jam); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.06em;}
+  .map-placeholder{background:var(--crust); border-radius:var(--radius); aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; color:var(--cream); position:relative; overflow:hidden;}
+  .map-placeholder svg{width:60%; opacity:0.5;}
+  .map-placeholder span{position:absolute; bottom:18px; left:18px; font-size:0.85rem; font-weight:600; color:var(--wheat);}
+
+  /* NEWSLETTER */
+  .newsletter{background:#efe4cc; border-radius:var(--radius); padding:36px; margin-top:60px; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap;}
+  .newsletter h3{font-size:1.3rem; margin-bottom:6px;}
+  .newsletter p{font-size:0.9rem; color:#5a4c3c;}
+  .newsletter-form{display:flex; gap:10px; flex-wrap:wrap;}
+  .newsletter-form input{padding:12px 16px; border:1.5px solid var(--crust); border-radius:var(--radius); font-family:inherit; font-size:0.9rem; min-width:220px;}
+  .form-msg{font-size:0.82rem; margin-top:8px; font-weight:600;}
+  .form-msg.ok{color:#2E7D5B;}
+  .form-msg.err{color:var(--jam);}
+
+  footer{background:var(--charcoal); color:#c9bda9; padding:40px 0; font-size:0.88rem;}
+  .footer-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
+
+  /* MODAL DE PEDIDO */
+  .overlay{position:fixed; inset:0; background:rgba(42,33,25,0.55); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .overlay.active{display:flex;}
+  .modal{background:var(--cream); border-radius:8px; width:100%; max-width:480px; max-height:88vh; overflow-y:auto; box-shadow:0 30px 60px rgba(0,0,0,0.35);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-size:1.2rem;}
+  .modal-close{background:none; border:none; font-size:1.3rem; color:var(--crust); line-height:1;}
+  .modal-body{padding:22px 24px;}
+  .order-item{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+  .order-item h4{font-size:0.92rem; font-weight:600;}
+  .order-item .price{font-size:0.8rem; color:#5a4c3c;}
+  .field{margin-top:16px;}
+  .field label{display:block; font-size:0.8rem; font-weight:700; margin-bottom:6px; color:var(--crust);}
+  .field input, .field textarea{width:100%; border:1.5px solid var(--line); border-radius:var(--radius); padding:10px 12px; font-family:inherit; font-size:0.9rem;}
+  .order-total{display:flex; justify-content:space-between; padding:16px 0; font-family:'Fraunces'; font-size:1.2rem; font-weight:700; border-top:2px solid var(--charcoal); margin-top:8px;}
+  .modal-foot{padding:16px 24px; border-top:1px solid var(--line);}
+  .confirm-box{text-align:center; padding:10px 0;}
+  .confirm-box .check{width:56px; height:56px; border-radius:50%; background:#e7f4ee; color:#2E7D5B; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.6rem;}
+
+  @media (max-width: 860px){
+    .hero{grid-template-columns:1fr; padding-top:56px;}
+    .hero h1{font-size:2.3rem;}
+    .menu-grid{grid-template-columns:1fr;}
+    .process-grid{grid-template-columns:1fr;}
+    .contact-grid{grid-template-columns:1fr;}
+    nav{display:none;}
+    .hamburger{display:flex;}
+    .newsletter{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap header-row">
+    <a class="brand" href="#top"><span class="brand-mark">ET</span> El Trigal</a>
+    <nav>
+      <a href="#menu">Menú</a>
+      <a href="#proceso">Nuestro pan</a>
+      <a href="#faq">Preguntas</a>
+      <a href="#visitanos">Visítanos</a>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-primary" id="btn-pedir" href="#">Pedir para hoy</a>
+      <button class="hamburger" id="btn-hamburger" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-head">
+    <a class="brand" href="#top"><span class="brand-mark">ET</span> El Trigal</a>
+    <button class="modal-close" id="btn-close-mobile-nav">✕</button>
+  </div>
+  <a href="#menu" class="mn-link">Menú</a>
+  <a href="#proceso" class="mn-link">Nuestro pan</a>
+  <a href="#faq" class="mn-link">Preguntas</a>
+  <a href="#visitanos" class="mn-link">Visítanos</a>
+  <button class="mn-link" id="btn-pedir-mobile">Pedir para hoy →</button>
+</div>
+
+<main id="top">
+  <section class="hero wrap">
+    <div>
+      <p class="eyebrow">Panadería de barrio · desde 2014</p>
+      <h1>Pan de horno de leña,<br>horneado <em>cada mañana.</em></h1>
+      <p class="hero-desc">Masa madre de fermentación lenta, harinas locales y un horno que no se apaga desde las 4 a.m. Sin conservantes, sin atajos.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#menu">Ver el menú de hoy</a>
+        <a class="btn btn-outline" href="#visitanos">Cómo llegar</a>
+      </div>
+    </div>
+    <div class="loaf-art">
+      <svg viewBox="0 0 300 300" fill="none">
+        <ellipse cx="150" cy="200" rx="120" ry="70" fill="#C89B3C"/>
+        <path d="M40 190 Q150 60 260 190 Q150 240 40 190Z" fill="#DBB463"/>
+        <path d="M90 130 Q150 80 210 130" stroke="#5B3A22" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M75 155 Q150 100 225 155" stroke="#5B3A22" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M65 178 Q150 120 235 178" stroke="#5B3A22" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="hours-tag">Horneamos desde<strong>5:30 a.m.</strong></div>
+    </div>
+  </section>
+
+  <section id="menu" class="menu">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="section-eyebrow">Lo que sale del horno</p>
+        <h2 class="section-title">Menú de hoy</h2>
+      </div>
+      <div class="menu-grid" id="menu-grid"></div>
+    </div>
+  </section>
+
+  <section id="proceso" class="wrap">
+    <div class="section-head">
+      <p class="section-eyebrow">Cómo lo hacemos</p>
+      <h2 class="section-title">Tres decisiones que no negociamos</h2>
+    </div>
+    <div class="process-grid">
+      <div class="process-card"><span class="num">I</span><h3>Masa madre propia</h3><p>Nuestro cultivo tiene más de nueve años. No usamos levadura industrial.</p></div>
+      <div class="process-card"><span class="num">II</span><h3>Horno de leña</h3><p>La temperatura irregular del fuego es lo que le da la corteza a nuestro pan.</p></div>
+      <div class="process-card"><span class="num">III</span><h3>Se vende lo del día</h3><p>Horneamos lo que calculamos vender. Lo que sobra va a comedores del barrio.</p></div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <h2 id="testimonial-text">"El pan que sabe a que alguien madrugó por ti."</h2>
+    <div class="strip-dots" id="testimonial-dots"></div>
+  </div>
+
+  <section id="faq" class="wrap">
+    <div class="section-head">
+      <p class="section-eyebrow">Antes de escribirnos</p>
+      <h2 class="section-title">Preguntas frecuentes</h2>
+    </div>
+    <div class="faq-list" id="faq-list"></div>
+  </section>
+
+  <section id="visitanos" class="wrap">
+    <div class="contact-grid">
+      <div>
+        <div class="section-head">
+          <p class="section-eyebrow">Visítanos</p>
+          <h2 class="section-title">Te esperamos en el horno</h2>
+        </div>
+        <ul class="info-list">
+          <li><span class="label">Dirección</span><span>Cra. 27 #45-12, Barrio Sotomayor, Bucaramanga</span></li>
+          <li><span class="label">Horario</span><span>Martes a domingo, 6:00 a.m. – 2:00 p.m.</span></li>
+          <li><span class="label">Teléfono</span><span>+57 300 123 4567</span></li>
+          <li><span class="label">Pedidos</span><span>Aceptamos encargos con 24 horas de anticipación</span></li>
+        </ul>
+      </div>
+      <div class="map-placeholder">
+        <svg viewBox="0 0 100 100" fill="none" stroke="#F7EFDF" stroke-width="2"><path d="M50 10 C30 10 15 25 15 45 C15 70 50 90 50 90 C50 90 85 70 85 45 C85 25 70 10 50 10Z"/><circle cx="50" cy="45" r="12"/></svg>
+        <span>Sotomayor, Bucaramanga</span>
+      </div>
+    </div>
+
+    <div class="newsletter">
+      <div>
+        <h3>Entérate del pan del día</h3>
+        <p>Te avisamos por correo qué sale del horno cada mañana. Sin spam.</p>
+      </div>
+      <div>
+        <form class="newsletter-form" id="newsletter-form">
+          <input type="email" id="newsletter-email" placeholder="tu@correo.com" required>
+          <button class="btn btn-primary" type="submit">Suscribirme</button>
+        </form>
+        <p class="form-msg" id="newsletter-msg"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <span>© 2026 Panadería El Trigal</span>
+    <span>Ejemplo demostrativo — creado por CD Sistemas</span>
+  </div>
+</footer>
+
+<!-- MODAL: PEDIDO -->
+<div class="overlay" id="modal-pedido">
+  <div class="modal">
+    <div class="modal-head"><h3>Arma tu encargo</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="modal-body" id="order-step-items">
+      <div id="order-items-list"></div>
+      <div class="order-total"><span>Total</span><span id="order-total">$0</span></div>
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="order-name" placeholder="Tu nombre completo">
+      </div>
+      <div class="field">
+        <label>Celular</label>
+        <input type="tel" id="order-phone" placeholder="Ej: 300 123 4567">
+      </div>
+      <div class="field">
+        <label>Hora de recogida</label>
+        <input type="text" id="order-time" placeholder="Ej: mañana 7:00 a.m.">
+      </div>
+      <p class="form-msg err" id="order-error"></p>
+    </div>
+    <div class="modal-body confirm-box" id="order-step-confirm" style="display:none;">
+      <div class="check">✓</div>
+      <h3 style="margin-bottom:8px;">¡Encargo recibido!</h3>
+      <p style="color:#5a4c3c; font-size:0.92rem;">Te confirmamos por WhatsApp la hora de recogida. Número de pedido: <strong id="order-number">#0000</strong></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" id="order-submit">Confirmar encargo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== DATOS ==================== */
+const menuItems = [
+  {id:'hogaza', name:'Hogaza de masa madre', desc:'Fermentación de 18 horas, corteza crujiente', price:9500},
+  {id:'croissant', name:'Croissant de mantequilla', desc:'Hojaldrado a mano, 27 capas', price:4800},
+  {id:'centeno', name:'Pan de centeno y nuez', desc:'Ideal para tostadas de la mañana', price:10200},
+  {id:'focaccia', name:'Focaccia de romero', desc:'Aceite de oliva y sal en escamas', price:8900},
+  {id:'trenza', name:'Trenza dulce de canela', desc:'Glaseado suave, recién salida', price:7300},
+  {id:'queso', name:'Pan de queso costeño', desc:'Receta de la casa, esponjoso', price:6500},
+];
+let cart = {};
+
+const testimonials = [
+  {text:'"El pan que sabe a que alguien madrugó por ti."', author:'— Clienta de barrio, todos los días'},
+  {text:'"Llevo tres años sin comprar pan en el supermercado."', author:'— Reseña en Google, 5 estrellas'},
+  {text:'"La focaccia se agota antes de las 8 y ya sé por qué."', author:'— Pedido recurrente los sábados'},
+];
+let testiIdx = 0;
+
+const faqs = [
+  {q:'¿Con cuánta anticipación debo pedir un encargo grande?', a:'Para pedidos de más de 10 unidades o tortas especiales, te pedimos 24 horas de anticipación para poder hornear justo a tiempo.'},
+  {q:'¿Tienen opciones sin gluten o veganas?', a:'Por ahora todo nuestro pan lleva trigo y algunos productos llevan mantequilla o huevo. Estamos probando una línea sin gluten para el segundo semestre.'},
+  {q:'¿Hacen domicilios?', a:'Sí, dentro de Bucaramanga por encargo mínimo de $30.000. Fuera de la ciudad solo recogida en el local.'},
+  {q:'¿Puedo pagar con tarjeta?', a:'Aceptamos efectivo, tarjeta y transferencia Nequi/Daviplata al recoger tu pedido.'},
+];
+
+/* ==================== MENÚ ==================== */
+function renderMenu(){
+  document.getElementById('menu-grid').innerHTML = menuItems.map(m=>{
+    const qty = cart[m.id] || 0;
+    return `<div class="menu-item">
+      <div><h3>${m.name}</h3><p>${m.desc}</p></div>
+      <div class="menu-item-add">
+        <span class="menu-price">$${m.price.toLocaleString('es-CO')}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+renderMenu();
+
+/* ==================== TESTIMONIOS ==================== */
+function renderTestimonial(){
+  const t = testimonials[testiIdx];
+  document.getElementById('testimonial-text').innerHTML = t.text + `<div class="author" style="font-size:0.8rem; margin-top:10px;">${t.author}</div>`;
+  document.getElementById('testimonial-dots').innerHTML = testimonials.map((_,i)=>
+    `<button class="strip-dot ${i===testiIdx?'active':''}" data-idx="${i}"></button>`).join('');
+}
+document.getElementById('testimonial-dots').addEventListener('click', e=>{
+  const dot = e.target.closest('[data-idx]');
+  if(!dot) return;
+  testiIdx = parseInt(dot.dataset.idx);
+  renderTestimonial();
+});
+renderTestimonial();
+setInterval(()=>{ testiIdx = (testiIdx+1) % testimonials.length; renderTestimonial(); }, 6000);
+
+/* ==================== FAQ ==================== */
+document.getElementById('faq-list').innerHTML = faqs.map((f,i)=>`
+  <div class="faq-item" data-i="${i}">
+    <button class="faq-q">${f.q}<span class="plus">+</span></button>
+    <div class="faq-a"><p>${f.a}</p></div>
+  </div>`).join('');
+document.getElementById('faq-list').addEventListener('click', e=>{
+  const btn = e.target.closest('.faq-q');
+  if(!btn) return;
+  btn.closest('.faq-item').classList.toggle('open');
+});
+
+/* ==================== MENÚ MÓVIL ==================== */
+const mobileNav = document.getElementById('mobile-nav');
+document.getElementById('btn-hamburger').addEventListener('click', ()=> mobileNav.classList.add('open'));
+document.getElementById('btn-close-mobile-nav').addEventListener('click', ()=> mobileNav.classList.remove('open'));
+mobileNav.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> mobileNav.classList.remove('open')));
+
+/* ==================== NEWSLETTER ==================== */
+document.getElementById('newsletter-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const email = document.getElementById('newsletter-email').value.trim();
+  const msg = document.getElementById('newsletter-msg');
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!valid){ msg.textContent='Escribe un correo válido.'; msg.className='form-msg err'; return; }
+  msg.textContent='¡Listo! Ya estás suscrito.'; msg.className='form-msg ok';
+  document.getElementById('newsletter-email').value='';
+});
+
+/* ==================== MODAL DE PEDIDO ==================== */
+const modalPedido = document.getElementById('modal-pedido');
+function openPedido(){
+  cart = {};
+  renderOrderItems();
+  document.getElementById('order-step-items').style.display='block';
+  document.getElementById('order-step-confirm').style.display='none';
+  document.getElementById('order-submit').textContent='Confirmar encargo';
+  document.getElementById('order-submit').dataset.state='items';
+  document.getElementById('order-error').textContent='';
+  modalPedido.classList.add('active');
+}
+document.getElementById('btn-pedir').addEventListener('click', e=>{ e.preventDefault(); openPedido(); });
+document.getElementById('btn-pedir-mobile').addEventListener('click', ()=>{ mobileNav.classList.remove('open'); openPedido(); });
+
+function renderOrderItems(){
+  document.getElementById('order-items-list').innerHTML = menuItems.map(m=>{
+    const qty = cart[m.id] || 0;
+    return `<div class="order-item">
+      <div><h4>${m.name}</h4><p class="price">$${m.price.toLocaleString('es-CO')} c/u</p></div>
+      <div class="menu-item-add">
+        <button type="button" class="qty-btn" data-dec="${m.id}">−</button>
+        <span class="qty-val">${qty}</span>
+        <button type="button" class="qty-btn" data-inc="${m.id}">+</button>
+      </div>
+    </div>`;
+  }).join('');
+  const total = menuItems.reduce((sum,m)=> sum + (cart[m.id]||0) * m.price, 0);
+  document.getElementById('order-total').textContent = '$' + total.toLocaleString('es-CO');
+}
+document.getElementById('order-items-list').addEventListener('click', e=>{
+  const inc = e.target.closest('[data-inc]');
+  const dec = e.target.closest('[data-dec]');
+  if(inc){ cart[inc.dataset.inc] = (cart[inc.dataset.inc]||0) + 1; renderOrderItems(); }
+  if(dec){ cart[dec.dataset.dec] = Math.max(0, (cart[dec.dataset.dec]||0) - 1); renderOrderItems(); }
+});
+
+document.getElementById('order-submit').addEventListener('click', function(){
+  if(this.dataset.state === 'done'){ modalPedido.classList.remove('active'); return; }
+  const total = menuItems.reduce((sum,m)=> sum + (cart[m.id]||0) * m.price, 0);
+  const name = document.getElementById('order-name').value.trim();
+  const phone = document.getElementById('order-phone').value.trim();
+  const errEl = document.getElementById('order-error');
+  if(total <= 0){ errEl.textContent='Agrega al menos un producto al encargo.'; return; }
+  if(!name || !phone){ errEl.textContent='Escribe tu nombre y celular para confirmar.'; return; }
+  errEl.textContent='';
+  document.getElementById('order-step-items').style.display='none';
+  document.getElementById('order-step-confirm').style.display='block';
+  document.getElementById('order-number').textContent = '#' + Math.floor(1000+Math.random()*9000);
+  this.textContent='Cerrar';
+  this.dataset.state='done';
+});
+
+document.querySelectorAll('[data-close]').forEach(btn=> btn.addEventListener('click', ()=> modalPedido.classList.remove('active')));
+modalPedido.addEventListener('click', e=>{ if(e.target===modalPedido) modalPedido.classList.remove('active'); });
+</script>
+
+</body>
+</html>

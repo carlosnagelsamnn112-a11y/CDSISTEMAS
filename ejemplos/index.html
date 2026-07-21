@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Ejemplos — CD Sistemas</title>
+  <meta name="description" content="Explora demostraciones funcionales de páginas web, aplicaciones móviles y sistemas construidos para emprendimientos.">
+  <link rel="icon" href="../assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    /* Estilos específicos para la Galería de Ejemplos */
+    .examples-hero {
+      padding: 80px 24px 40px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .examples-hero h1 {
+      margin-bottom: 16px;
+    }
+    .examples-hero .hero-desc {
+      margin-bottom: 0;
+      max-width: 60ch;
+    }
+
+    /* Controles de Filtro */
+    .filter-container {
+      margin: 40px 0 50px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      position: relative;
+      z-index: 5;
+    }
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      padding: 8px 18px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .filter-btn:hover {
+      border-color: var(--line-strong);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .filter-btn.active {
+      background: var(--paper);
+      color: #000;
+      border-color: var(--paper);
+    }
+
+    /* Grid de Ejemplos */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 100px;
+    }
+    .example-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 36px 30px 40px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 280px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .example-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--ink);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .example-card:hover {
+      background: var(--bg-panel-soft);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+    .example-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card-header-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .example-tag {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+      padding: 3px 8px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .example-card:hover .example-tag {
+      color: var(--ink);
+      border-color: var(--line-strong);
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      color: #25D366;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #25D366;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #25D366;
+      animation: pulse 2s infinite;
+    }
+
+    .example-info {
+      margin-bottom: 30px;
+    }
+    .example-info h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    .example-info p {
+      font-size: 14.5px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+
+    .example-action {
+      align-self: flex-start;
+      margin-top: auto;
+    }
+
+    /* Esquinas técnicas cyberpunk en la sección de ejemplos */
+    .section-container {
+      position: relative;
+      padding: 0 0 40px;
+    }
+
+    /* Fallback en caso de que no cargue JS */
+    .no-js-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+      border: 1px dashed var(--line-strong);
+      color: var(--ink-soft);
+      font-family: var(--font-display);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 850px) {
+      .examples-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid-overlay" aria-hidden="true"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="../index.html">
+      <img src="../assets/logo.png" alt="CD Sistemas" class="brand-mark">
+      <span class="brand-name">CD SISTEMAS</span>
+    </a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="../index.html#servicios">Servicios</a>
+      <a href="../index.html#proceso">Proceso</a>
+      <a href="../index.html#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-ghost header-cta" href="https://wa.me/573104848585" target="_blank" rel="noopener">Escríbenos <span class="btn-arrow">→</span></a>
+  </div>
+</header>
+
+<main id="top">
+  
+  <!-- HERO PORTAFOLIO -->
+  <section class="examples-hero wrap">
+    <div class="corner-mark corner-tl" aria-hidden="true"></div>
+    <div class="corner-mark corner-tr" aria-hidden="true"></div>
+
+    <div class="hero-copy">
+      <p class="eyebrow">CD SISTEMAS — CATÁLOGO DE DEMOS</p>
+      <h1>Ejemplos de software<br><span class="accent">interactivos.</span></h1>
+      <p class="hero-desc">Prueba en tiempo real las interfaces, funcionalidades y flujos que diseñamos. Haz clic en cualquiera de las fichas técnicas para probar la demo interactiva.</p>
+    </div>
+  </section>
+
+  <!-- CONTENIDO DE LA GALERÍA -->
+  <div class="wrap section-container">
+    
+    <!-- Filtros de categoría -->
+    <div class="filter-container" id="filterContainer">
+      <button class="filter-btn active" data-filter="TODOS">TODOS</button>
+      <button class="filter-btn" data-filter="SISTEMA">SISTEMAS</button>
+      <button class="filter-btn" data-filter="APLICACIÓN">APLICACIONES</button>
+      <button class="filter-btn" data-filter="WEB">PÁGINAS WEB</button>
+    </div>
+
+    <!-- Grid dinámico -->
+    <div class="examples-grid" id="examplesGrid">
+      <noscript>
+        <div class="no-js-msg">
+          Se requiere JavaScript para cargar las demostraciones interactivas del portafolio.
+        </div>
+      </noscript>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer wrap">
+  <div class="footer-left">
+    <div class="brand">
+      <img src="../assets/logo.png" alt="CD Sistemas" class="footer-mark">
+      <span class="brand-name">CD SISTEMAS</span>
+    </div>
+    <p class="copyright">© <span id="year"></span> CD Sistemas. Software para emprendimientos, hecho a la medida.</p>
+  </div>
+  <div class="footer-right">
+    <div class="footer-group">
+      <span class="group-title">SISTEMAS</span>
+      <a href="../index.html#servicios">Servicios</a>
+      <a href="../index.html#proceso">Proceso</a>
+    </div>
+    <div class="footer-group">
+      <span class="group-title">CONTACTO</span>
+      <a href="https://wa.me/573104848585" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="mailto:cdsistemas1@gmail.com">Correo</a>
+      <a href="https://www.instagram.com/cd.sistemas1?igsh=MTk5ZnV6bGh5cWppeA==" target="_blank" rel="noopener">Instagram</a>
+    </div>
+  </div>
+</footer>
+
+<!-- BOTONES FLOTANTES DE CONTACTO -->
+<div class="float-btns" aria-label="Contacto rápido">
+  <a class="float-btn float-wa" href="https://wa.me/573104848585" target="_blank" rel="noopener" title="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.861L.057 23.479a.5.5 0 0 0 .613.635l5.799-1.524A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.84a9.839 9.839 0 0 1-5.012-1.367l-.36-.213-3.724.977.995-3.634-.234-.374A9.84 9.84 0 0 1 2.16 12C2.16 6.553 6.553 2.16 12 2.16c5.448 0 9.84 4.393 9.84 9.84 0 5.448-4.392 9.84-9.84 9.84z"/></svg>
+  </a>
+  <a class="float-btn float-ig" href="https://www.instagram.com/cd.sistemas1?igsh=MTk5ZnV6bGh5cWppeA==" target="_blank" rel="noopener" title="Instagram">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+  </a>
+  <button type="button" class="float-btn float-mail" id="mailFloatBtn" title="Correo electrónico" aria-haspopup="true" aria-expanded="false" aria-controls="mailPopover">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+  </button>
+
+  <div class="mail-popover" id="mailPopover" role="dialog" aria-label="Correo de contacto" hidden>
+    <span class="mail-popover-label">CORREO</span>
+    <span class="mail-popover-address" id="mailPopoverAddress">cdsistemas1@gmail.com</span>
+    <button type="button" class="mail-copy-btn" id="mailCopyBtn">Copiar</button>
+  </div>
+</div>
+
+<!-- CARGA DE DATOS DE EJEMPLOS -->
+<script src="ejemplos-data.js"></script>
+
+<script>
+  // Establece el año actual en el pie de página
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Elementos del DOM
+  const examplesGrid = document.getElementById('examplesGrid');
+  const filterContainer = document.getElementById('filterContainer');
+
+  // Función para renderizar los ejemplos
+  function renderExamples(filter = 'TODOS') {
+    examplesGrid.innerHTML = '';
+    
+    // Filtrar los datos
+    const filteredExamples = ejemplosData.filter(item => {
+      if (filter === 'TODOS') return true;
+      // Comprobar si la categoría del ejemplo contiene la palabra del filtro (ej. "SISTEMA" en "SISTEMA DE INVENTARIO")
+      return item.categoria.toUpperCase().includes(filter.toUpperCase());
+    });
+
+    if (filteredExamples.length === 0) {
+      examplesGrid.innerHTML = `
+        <div class="no-js-msg" style="grid-column: 1 / -1; border-style: dashed;">
+          No se encontraron ejemplos para la categoría seleccionada.
+        </div>
+      `;
+      return;
+    }
+
+    // Dibujar las tarjetas
+    filteredExamples.forEach((ejemplo, index) => {
+      const card = document.createElement('article');
+      card.className = 'example-card reveal';
+      
+      // Formatear el índice para que siempre tenga dos dígitos (01, 02...)
+      const numStr = String(index + 1).padStart(2, '0');
+
+      card.innerHTML = `
+        <div class="card-header-meta">
+          <span class="example-tag">${ejemplo.categoria}</span>
+          <div class="status-badge">
+            <span class="status-dot"></span>
+            <span>DEMO ACTIVA</span>
+          </div>
+        </div>
+        <div class="example-info">
+          <h3>${ejemplo.titulo}</h3>
+          <p>${ejemplo.descripcion}</p>
+        </div>
+        <div class="example-action">
+          <a class="btn btn-outline" href="${ejemplo.archivo}" target="_blank" rel="noopener">
+            Abrir Demo <span class="btn-arrow">→</span>
+          </a>
+        </div>
+      `;
+
+      examplesGrid.appendChild(card);
+    });
+
+    // Inicializar el IntersectionObserver para las nuevas tarjetas (scroll reveal)
+    initScrollReveal();
+  }
+
+  // Scroll Reveal para las tarjetas
+  function initScrollReveal() {
+    const cards = document.querySelectorAll('.example-card');
+    cards.forEach(card => card.classList.add('reveal'));
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    cards.forEach(card => observer.observe(card));
+  }
+
+  // Gestión de Filtros
+  filterContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('filter-btn')) {
+      // Remover clase active de todos los botones
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      
+      // Agregar clase active al seleccionado
+      e.target.classList.add('active');
+      
+      // Renderizar los ejemplos filtrados
+      const filterValue = e.target.getAttribute('data-filter');
+      renderExamples(filterValue);
+    }
+  });
+
+  // Renderizar todos al inicio
+  document.addEventListener('DOMContentLoaded', () => {
+    renderExamples('TODOS');
+  });
+
+  // Popover del botón de correo (copiado idéntico del home para consistencia)
+  const mailBtn = document.getElementById('mailFloatBtn');
+  const mailPopover = document.getElementById('mailPopover');
+  const mailCopyBtn = document.getElementById('mailCopyBtn');
+  const mailAddress = document.getElementById('mailPopoverAddress').textContent.trim();
+
+  function openMailPopover() {
+    mailPopover.hidden = false;
+    mailBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMailPopover() {
+    mailPopover.hidden = true;
+    mailBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (mailBtn && mailPopover && mailCopyBtn) {
+    mailBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (mailPopover.hidden) {
+        openMailPopover();
+      } else {
+        closeMailPopover();
+      }
+    });
+
+    mailCopyBtn.addEventListener('click', async () => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(mailAddress);
+        } else {
+          const tempInput = document.createElement('textarea');
+          tempInput.value = mailAddress;
+          tempInput.style.position = 'fixed';
+          tempInput.style.opacity = '0';
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+        const original = mailCopyBtn.textContent;
+        mailCopyBtn.textContent = '¡Copiado!';
+        mailCopyBtn.classList.add('copied');
+        setTimeout(() => {
+          mailCopyBtn.textContent = original;
+          mailCopyBtn.classList.remove('copied');
+        }, 1800);
+      } catch (err) {
+        mailCopyBtn.textContent = 'Error';
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!mailPopover.hidden && !mailPopover.contains(e.target) && e.target !== mailBtn) {
+        closeMailPopover();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !mailPopover.hidden) {
+        closeMailPopover();
+        mailBtn.focus();
+      }
+    });
+  }
+</script>
+</body>
+</html>

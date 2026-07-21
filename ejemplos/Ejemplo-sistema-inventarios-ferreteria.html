@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferretera del Norte — Sistema de inventarios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F4F7;
+    --panel:#FFFFFF;
+    --ink:#1B2430;
+    --muted:#6B7686;
+    --line:#E3E7EC;
+    --steel:#1F3A5F;
+    --steel-soft:#EAF0F7;
+    --orange:#E8622C;
+    --green:#2E7D5B;
+    --green-soft:#E7F4EE;
+    --amber:#B5860B;
+    --amber-soft:#FBF3DC;
+    --red-soft:#FBE9E5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif; font-size:14px;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  h1,h2,h3,.display{font-family:'Space Grotesk', sans-serif;}
+  button{font-family:inherit; cursor:pointer;}
+  input, select{font-family:inherit;}
+
+  .app{display:grid; grid-template-columns:230px 1fr; min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{
+    background:var(--steel); color:#DCE6F2; padding:24px 18px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .side-brand{display:flex; align-items:center; gap:10px; margin-bottom:34px; padding:0 6px;}
+  .side-brand .mark{
+    width:32px; height:32px; border-radius:6px; background:var(--orange);
+    display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; color:#fff; font-size:0.85rem;
+  }
+  .side-brand span{font-family:'Space Grotesk'; font-weight:700; font-size:0.95rem; letter-spacing:0.01em;}
+  .side-label{font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:#7C93AE; margin:16px 6px 8px;}
+  .side-link{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px;
+    color:#B9CBE0; font-size:0.87rem; font-weight:500; border:none; background:none; width:100%; text-align:left;
+  }
+  .side-link svg{width:17px; height:17px; flex-shrink:0;}
+  .side-link.active{background:rgba(255,255,255,0.1); color:#fff;}
+  .side-link:hover{background:rgba(255,255,255,0.06);}
+
+  /* MAIN */
+  main{padding:26px 32px 60px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; gap:16px; flex-wrap:wrap;}
+  .topbar h1{font-size:1.4rem;}
+  .topbar .sub{color:var(--muted); font-size:0.85rem; margin-top:2px;}
+  .topbar-actions{display:flex; gap:10px;}
+  .btn{
+    border:1px solid var(--line); background:var(--panel); padding:9px 16px; border-radius:8px;
+    font-size:0.84rem; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:6px;
+  }
+  .btn:hover{background:var(--bg);}
+  .btn-primary{background:var(--steel); color:#fff; border-color:var(--steel);}
+  .btn-primary:hover{background:#284a78;}
+  .btn-sm{padding:6px 12px; font-size:0.78rem;}
+
+  /* STAT CARDS */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:26px;}
+  .stat-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px;
+  }
+  .stat-card .label{font-size:0.78rem; color:var(--muted); margin-bottom:8px; font-weight:500;}
+  .stat-card .value{font-family:'Space Grotesk'; font-size:1.65rem; font-weight:700;}
+  .stat-card .delta{font-size:0.78rem; margin-top:6px; font-weight:600;}
+  .delta.up{color:var(--green);}
+  .delta.down{color:var(--orange);}
+
+  /* PANEL LAYOUT */
+  .grid-2{display:grid; grid-template-columns:2fr 1fr; gap:18px; align-items:start;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:18px;}
+  .panel-head{display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--line); gap:12px; flex-wrap:wrap;}
+  .panel-head h2{font-size:0.98rem;}
+  .panel-head a, .panel-head .link-btn{font-size:0.8rem; color:var(--steel); font-weight:600; text-decoration:none; background:none; border:none;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.85rem;}
+  thead th{
+    text-align:left; padding:11px 20px; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); user-select:none;
+  }
+  thead th.sortable{cursor:pointer;}
+  thead th.sortable:hover{color:var(--ink);}
+  thead th .arrow{opacity:0.4; font-size:0.7em; margin-left:3px;}
+  thead th.sorted .arrow{opacity:1;}
+  tbody td{padding:13px 20px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:var(--bg);}
+  .sku{font-family:'IBM Plex Mono'; font-size:0.78rem; color:var(--muted);}
+  .prod-name{font-weight:600;}
+  .prod-cat{font-size:0.76rem; color:var(--muted);}
+
+  .stock-bar-wrap{display:flex; align-items:center; gap:8px;}
+  .stock-bar{width:70px; height:6px; border-radius:4px; background:var(--line); overflow:hidden;}
+  .stock-bar span{display:block; height:100%; border-radius:4px;}
+  .stock-num{font-family:'IBM Plex Mono'; font-size:0.8rem; font-weight:600; min-width:36px;}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px;
+    font-size:0.74rem; font-weight:600;
+  }
+  .pill-ok{background:var(--green-soft); color:var(--green);}
+  .pill-low{background:var(--amber-soft); color:var(--amber);}
+  .pill-out{background:var(--red-soft); color:var(--orange);}
+  .pill-info{background:var(--steel-soft); color:var(--steel);}
+  .pill::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+  /* MOVEMENTS LIST */
+  .move-list{padding:6px 0;}
+  .move-item{display:flex; gap:12px; padding:12px 20px; border-bottom:1px solid var(--line); align-items:flex-start;}
+  .move-item:last-child{border-bottom:none;}
+  .move-icon{
+    width:30px; height:30px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .move-icon.in{background:var(--green-soft); color:var(--green);}
+  .move-icon.out{background:var(--red-soft); color:var(--orange);}
+  .move-icon svg{width:15px; height:15px;}
+  .move-item h4{font-size:0.84rem; font-weight:600;}
+  .move-item p{font-size:0.76rem; color:var(--muted); margin-top:2px;}
+  .move-item .qty{margin-left:auto; font-family:'IBM Plex Mono'; font-size:0.82rem; font-weight:600; white-space:nowrap;}
+  .qty.in{color:var(--green);}
+  .qty.out{color:var(--orange);}
+
+  .search-box{
+    display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:8px;
+    padding:8px 12px; background:var(--panel); width:260px; color:var(--muted); font-size:0.82rem;
+  }
+  .search-box svg{width:15px; height:15px; flex-shrink:0;}
+  .search-box input{border:none; outline:none; background:none; width:100%; color:var(--ink); font-size:0.82rem;}
+
+  .filter-row{display:flex; gap:10px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center;}
+  .filter-row select{border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:0.8rem; color:var(--ink); background:var(--panel);}
+  .filter-row .count{font-size:0.78rem; color:var(--muted); margin-left:auto;}
+
+  .warehouse-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .warehouse-card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px;}
+  .warehouse-card h3{font-size:1rem; margin-bottom:4px;}
+  .warehouse-card .wh-sub{font-size:0.78rem; color:var(--muted); margin-bottom:16px;}
+  .warehouse-card .wh-stat{display:flex; justify-content:space-between; font-size:0.82rem; padding:8px 0; border-top:1px solid var(--line);}
+  .warehouse-card .wh-stat span:last-child{font-weight:600; font-family:'IBM Plex Mono';}
+
+  .report-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px;}
+
+  /* MODAL */
+  .overlay{position:fixed; inset:0; background:rgba(20,26,36,0.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .overlay.active{display:flex;}
+  .modal{background:var(--panel); border-radius:14px; width:100%; max-width:440px; max-height:90vh; overflow-y:auto; box-shadow:0 30px 60px rgba(0,0,0,0.3);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-size:1.05rem;}
+  .modal-close{background:none; border:none; color:var(--muted); font-size:1.2rem; line-height:1; padding:4px;}
+  .modal-body{padding:22px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:0.78rem; font-weight:600; color:var(--muted); margin-bottom:6px;}
+  .field select, .field input{width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-size:0.86rem; color:var(--ink);}
+  .field-row{display:flex; gap:12px;}
+  .field-row .field{flex:1;}
+  .toggle-group{display:flex; gap:8px;}
+  .toggle-btn{flex:1; border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:9px; font-size:0.82rem; font-weight:600; color:var(--muted); text-align:center;}
+  .toggle-btn.active-in{border-color:var(--green); background:var(--green-soft); color:var(--green);}
+  .toggle-btn.active-out{border-color:var(--orange); background:var(--red-soft); color:var(--orange);}
+  .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:16px 22px; border-top:1px solid var(--line);}
+  .detail-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:0.84rem;}
+  .detail-row:last-child{border-bottom:none;}
+  .detail-row span:first-child{color:var(--muted);}
+  .detail-row span:last-child{font-weight:600;}
+
+  /* TOAST */
+  .toast{
+    position:fixed; bottom:24px; right:24px; background:var(--ink); color:#fff; padding:14px 20px;
+    border-radius:10px; font-size:0.85rem; font-weight:500; box-shadow:0 12px 30px rgba(0,0,0,0.25);
+    display:flex; align-items:center; gap:10px; transform:translateY(20px); opacity:0; pointer-events:none;
+    transition:all .25s ease; z-index:200;
+  }
+  .toast.show{transform:translateY(0); opacity:1;}
+  .toast .dot{width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0;}
+
+  @media (max-width:1000px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .warehouse-grid, .report-grid{grid-template-columns:1fr;}
+    .search-box{width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="side-brand"><span class="mark">FN</span><span>FERRETERA DEL NORTE</span></div>
+
+    <div class="side-label">General</div>
+    <button class="side-link active" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      Panel general
+    </button>
+    <button class="side-link" data-view="productos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>
+      Productos
+    </button>
+    <button class="side-link" data-view="movimientos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v4H4zM4 12h10v4H4zM4 20h6v-4"/></svg>
+      Movimientos
+    </button>
+    <div class="side-label">Operación</div>
+    <button class="side-link" data-view="pedidos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M2 3h3l2.4 12.2a2 2 0 002 1.8h8.4a2 2 0 002-1.7L21 7H6"/></svg>
+      Pedidos a proveedor
+    </button>
+    <button class="side-link" data-view="bodegas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      Bodegas
+    </button>
+    <button class="side-link" data-view="reportes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Reportes
+    </button>
+  </aside>
+
+  <main>
+    <!-- ===== TOPBAR (común a todas las vistas) ===== -->
+    <div class="topbar">
+      <div>
+        <h1 id="view-title">Panel general</h1>
+        <p class="sub" id="view-sub">Martes, 14 de julio — Bodega principal</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="search-input" placeholder="Buscar SKU o producto">
+        </div>
+        <button class="btn btn-primary" id="btn-nuevo-mov">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+          Registrar movimiento
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: PANEL GENERAL ===== -->
+    <section class="view active" id="view-dashboard">
+      <div class="stats">
+        <div class="stat-card">
+          <div class="label">SKU activos</div>
+          <div class="value" id="stat-skus">1.284</div>
+          <div class="delta up">+12 este mes</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Unidades en bodega</div>
+          <div class="value mono" id="stat-units">48.930</div>
+          <div class="delta down">−3.1% vs. semana pasada</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Productos en stock bajo</div>
+          <div class="value" id="stat-low" style="color:var(--amber)">23</div>
+          <div class="delta down">requieren reposición</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Valor total en inventario</div>
+          <div class="value mono">$612,4M</div>
+          <div class="delta up">+2.4% este mes</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><h2>Productos con nivel crítico</h2><button class="link-btn" data-goto="productos">Ver inventario completo →</button></div>
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>SKU</th><th>Bodega</th><th>Stock</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="tbl-criticos"></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Movimientos recientes</h2></div>
+          <div class="move-list" id="dashboard-moves"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VISTA: PRODUCTOS ===== -->
+    <section class="view" id="view-productos">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Todos los productos</h2>
+          <button class="btn btn-sm" id="btn-export-csv">Exportar CSV</button>
+        </div>
+        <div class="filter-row">
+          <select id="filter-bodega">
+            <option value="">Todas las bodegas</option>
+            <option value="Principal">Bodega principal</option>
+            <option value="Bodega Sur">Bodega Sur</option>
+          </select>
+          <select id="filter-estado">
+            <option value="">Todos los estados</option>
+            <option value="ok">Normal</option>
+            <option value="low">Stock bajo</option>
+            <option value="out">Agotado</option>
+          </select>
+          <span class="count" id="productos-count">0 productos</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="name">Producto <span class="arrow">↕</span></th>
+              <th class="sortable" data-sort="sku">SKU <span class="arrow">↕</span></th>
+              <th>Bodega</th>
+              <th class="sortable" data-sort="stock">Stock <span class="arrow">↕</span></th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-productos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== VISTA: MOVIMIENTOS ===== -->
+    <section class="view" id="view-movimientos">
+      <div class="panel">
+        <div class="panel-head"><h2>Historial de movimientos</h2></div>
+        <div class="filter-row">
+          <select id="filter-tipo-mov">
+            <option value="">Todos los tipos</option>
+            <option value="in">Entradas</option>
+            <option value="out">Salidas</option>
+          </select>
+          <span class="count" id="mov-count">0 movimientos</span>
+        </div>
+        <div class="move-list" id="tbl-movimientos"></div>
+      </div>
+    </section>
+
+    <!-- ===== VISTA: PEDIDOS A PROVEEDOR ===== -->
+    <section class="view" id="view-pedidos">
+      <div class="panel">
+        <div class="panel-head"><h2>Pedidos a proveedor</h2><button class="btn btn-primary btn-sm" id="btn-nuevo-pedido">+ Nuevo pedido</button></div>
+        <table>
+          <thead><tr><th>Proveedor</th><th>Producto</th><th>Cantidad</th><th>Fecha estimada</th><th>Estado</th></tr></thead>
+          <tbody id="tbl-pedidos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== VISTA: BODEGAS ===== -->
+    <section class="view" id="view-bodegas">
+      <div class="warehouse-grid" id="warehouse-grid"></div>
+    </section>
+
+    <!-- ===== VISTA: REPORTES ===== -->
+    <section class="view" id="view-reportes">
+      <div class="report-grid">
+        <div class="stat-card"><div class="label">Rotación promedio</div><div class="value">18 días</div></div>
+        <div class="stat-card"><div class="label">Pedidos pendientes</div><div class="value" id="rep-pedidos">3</div></div>
+        <div class="stat-card"><div class="label">Productos agotados</div><div class="value" id="rep-agotados" style="color:var(--orange)">1</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Descargar reportes</h2></div>
+        <div class="modal-body" style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn" id="btn-report-inventario">📦 Inventario completo (.csv)</button>
+          <button class="btn" id="btn-report-movimientos">🔁 Movimientos del mes (.csv)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL: Registrar movimiento -->
+<div class="overlay" id="modal-movimiento">
+  <div class="modal">
+    <div class="modal-head"><h3>Registrar movimiento</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Tipo de movimiento</label>
+        <div class="toggle-group">
+          <button type="button" class="toggle-btn active-in" data-tipo="in" id="tipo-in">↓ Entrada</button>
+          <button type="button" class="toggle-btn" data-tipo="out" id="tipo-out">↑ Salida</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Producto</label>
+        <select id="mov-producto"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Cantidad</label>
+          <input type="number" id="mov-cantidad" min="1" value="1">
+        </div>
+        <div class="field">
+          <label>Bodega</label>
+          <select id="mov-bodega">
+            <option>Principal</option>
+            <option>Bodega Sur</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Referencia (proveedor / pedido / cliente)</label>
+        <input type="text" id="mov-ref" placeholder="Ej: Pedido #4032 o Proveedor Cemex">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="mov-guardar">Guardar movimiento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle de producto -->
+<div class="overlay" id="modal-detalle">
+  <div class="modal">
+    <div class="modal-head"><h3 id="detalle-nombre">Producto</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="modal-body" id="detalle-body"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cerrar</button>
+      <button class="btn btn-primary" id="detalle-registrar">Registrar movimiento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo pedido a proveedor -->
+<div class="overlay" id="modal-pedido">
+  <div class="modal">
+    <div class="modal-head"><h3>Nuevo pedido a proveedor</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Proveedor</label>
+        <input type="text" id="pedido-proveedor" placeholder="Ej: Cemex, Diaco, Pintuco...">
+      </div>
+      <div class="field">
+        <label>Producto</label>
+        <select id="pedido-producto"></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Cantidad</label>
+          <input type="number" id="pedido-cantidad" min="1" value="50">
+        </div>
+        <div class="field">
+          <label>Fecha estimada</label>
+          <input type="date" id="pedido-fecha">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="pedido-guardar">Crear pedido</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toast-msg">Guardado</span></div>
+
+<script>
+/* ==================== DATOS ==================== */
+let products = [
+  {sku:'FN-CM-1050', name:'Cemento gris x50kg', cat:'Materiales · Cemex', bodega:'Principal', stock:14, min:40},
+  {sku:'FN-AC-3820', name:'Varilla corrugada 3/8"', cat:'Acero · Diaco', bodega:'Bodega Sur', stock:0, min:30},
+  {sku:'FN-PT-2205', name:'Pintura acrílica blanca 5gal', cat:'Acabados · Pintuco', bodega:'Principal', stock:31, min:35},
+  {sku:'FN-HD-4106', name:'Tubería PVC 4" x 6m', cat:'Hidráulica · Pavco', bodega:'Bodega Sur', stock:210, min:60},
+  {sku:'FN-HR-7702', name:'Taladro percutor 1/2"', cat:'Herramientas · Bosch', bodega:'Principal', stock:9, min:15},
+  {sku:'FN-CM-1051', name:'Cemento blanco x25kg', cat:'Materiales · Cemex', bodega:'Principal', stock:88, min:25},
+  {sku:'FN-EL-5010', name:'Cable eléctrico THHN #12', cat:'Eléctrico · Centelsa', bodega:'Bodega Sur', stock:142, min:40},
+  {sku:'FN-HR-7710', name:'Pulidora angular 4.5"', cat:'Herramientas · Makita', bodega:'Principal', stock:22, min:10},
+  {sku:'FN-FE-9001', name:'Tornillo autoperforante 1"', cat:'Ferretería · Genérico', bodega:'Bodega Sur', stock:5400, min:1000},
+  {sku:'FN-PT-2210', name:'Pintura esmalte azul 1gal', cat:'Acabados · Pintuco', bodega:'Principal', stock:18, min:20},
+  {sku:'FN-HD-4110', name:'Codo PVC 4" x 90°', cat:'Hidráulica · Pavco', bodega:'Bodega Sur', stock:63, min:30},
+  {sku:'FN-AC-3830', name:'Malla electrosoldada', cat:'Acero · Diaco', bodega:'Bodega Sur', stock:26, min:25},
+];
+
+let movements = [
+  {kind:'in', title:'Entrada — Cemex', desc:'Cemento gris x50kg · Bodega principal', qty:400, sku:'FN-CM-1050'},
+  {kind:'out', title:'Salida — Pedido #4021', desc:'Varilla corrugada 3/8" · Cliente Constructora Aliar', qty:180, sku:'FN-AC-3820'},
+  {kind:'out', title:'Salida — Pedido #4019', desc:'Taladro percutor 1/2" · Cliente Ferretería Su Casa', qty:6, sku:'FN-HR-7702'},
+  {kind:'in', title:'Entrada — Pintuco', desc:'Pintura acrílica blanca 5gal · Bodega principal', qty:60, sku:'FN-PT-2205'},
+  {kind:'out', title:'Salida — Pedido #4015', desc:'Tubería PVC 4" x 6m · Cliente Constructora Aliar', qty:45, sku:'FN-HD-4106'},
+];
+
+let purchaseOrders = [
+  {proveedor:'Cemex', producto:'Cemento gris x50kg', cantidad:300, fecha:'2026-07-18', estado:'En tránsito'},
+  {proveedor:'Diaco', producto:'Varilla corrugada 3/8"', cantidad:500, fecha:'2026-07-16', estado:'Confirmado'},
+  {proveedor:'Bosch', producto:'Taladro percutor 1/2"', cantidad:20, fecha:'2026-07-22', estado:'Pendiente'},
+];
+
+let sortState = {key:'name', dir:1};
+
+/* ==================== HELPERS ==================== */
+function estadoDe(p){
+  if(p.stock === 0) return 'out';
+  if(p.stock < p.min) return 'low';
+  return 'ok';
+}
+function pillHtml(estado){
+  if(estado==='out') return '<span class="pill pill-out">Agotado</span>';
+  if(estado==='low') return '<span class="pill pill-low">Stock bajo</span>';
+  return '<span class="pill pill-ok">Normal</span>';
+}
+function barColor(estado){
+  if(estado==='out') return 'var(--orange)';
+  if(estado==='low') return 'var(--amber)';
+  return 'var(--green)';
+}
+function barWidth(p){
+  const pct = Math.min(100, Math.round((p.stock / (p.min*2.2)) * 100));
+  return Math.max(pct,3);
+}
+function rowHtml(p){
+  const estado = estadoDe(p);
+  return `<tr class="clickable" data-sku="${p.sku}">
+    <td><div class="prod-name">${p.name}</div><div class="prod-cat">${p.cat}</div></td>
+    <td class="sku">${p.sku}</td>
+    <td>${p.bodega}</td>
+    <td><div class="stock-bar-wrap"><div class="stock-bar"><span style="width:${barWidth(p)}%; background:${barColor(estado)}"></span></div><span class="stock-num mono">${p.stock}</span></div></td>
+    <td>${pillHtml(estado)}</td>
+  </tr>`;
+}
+function moveIcon(kind){
+  return kind==='in'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
+}
+function moveItemHtml(m){
+  return `<div class="move-item">
+    <div class="move-icon ${m.kind}">${moveIcon(m.kind)}</div>
+    <div><h4>${m.title}</h4><p>${m.desc}</p></div>
+    <span class="qty ${m.kind}">${m.kind==='in'?'+':'−'}${m.qty}</span>
+  </div>`;
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+function fillProductSelect(sel){
+  sel.innerHTML = products.map(p=>`<option value="${p.sku}">${p.name} (${p.sku})</option>`).join('');
+}
+
+/* ==================== RENDER ==================== */
+function renderDashboard(){
+  const criticos = products.filter(p=> estadoDe(p) !== 'ok').slice(0,6);
+  document.getElementById('tbl-criticos').innerHTML = criticos.map(rowHtml).join('');
+  document.getElementById('dashboard-moves').innerHTML = movements.slice(0,5).map(moveItemHtml).join('');
+  document.getElementById('stat-units').textContent = products.reduce((a,p)=>a+p.stock,0).toLocaleString('es-CO');
+  document.getElementById('stat-low').textContent = products.filter(p=>estadoDe(p)!=='ok').length;
+}
+
+function renderProductos(){
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const bodega = document.getElementById('filter-bodega').value;
+  const estado = document.getElementById('filter-estado').value;
+  let list = products.filter(p=>{
+    const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    const matchB = !bodega || p.bodega === bodega;
+    const matchE = !estado || estadoDe(p) === estado;
+    return matchQ && matchB && matchE;
+  });
+  list.sort((a,b)=>{
+    let av = a[sortState.key], bv = b[sortState.key];
+    if(typeof av === 'string') return av.localeCompare(bv) * sortState.dir;
+    return (av - bv) * sortState.dir;
+  });
+  document.getElementById('tbl-productos').innerHTML = list.map(rowHtml).join('');
+  document.getElementById('productos-count').textContent = `${list.length} producto${list.length===1?'':'s'}`;
+  document.querySelectorAll('#view-productos th.sortable').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.sort === sortState.key);
+    th.querySelector('.arrow').textContent = th.dataset.sort === sortState.key ? (sortState.dir===1?'↑':'↓') : '↕';
+  });
+}
+
+function renderMovimientos(){
+  const tipo = document.getElementById('filter-tipo-mov').value;
+  const list = movements.filter(m=> !tipo || m.kind === tipo);
+  document.getElementById('tbl-movimientos').innerHTML = list.map(moveItemHtml).join('') || '<p style="padding:20px; color:var(--muted); font-size:0.85rem;">No hay movimientos con este filtro.</p>';
+  document.getElementById('mov-count').textContent = `${list.length} movimiento${list.length===1?'':'s'}`;
+}
+
+function renderPedidos(){
+  document.getElementById('tbl-pedidos').innerHTML = purchaseOrders.map(o=>{
+    const pillClass = o.estado==='Pendiente' ? 'pill-low' : o.estado==='Confirmado' ? 'pill-info' : 'pill-ok';
+    return `<tr><td class="prod-name">${o.proveedor}</td><td>${o.producto}</td><td class="mono">${o.cantidad}</td><td class="mono">${o.fecha}</td><td><span class="pill ${pillClass}">${o.estado}</span></td></tr>`;
+  }).join('');
+  document.getElementById('rep-pedidos').textContent = purchaseOrders.filter(o=>o.estado!=='Entregado').length;
+}
+
+function renderBodegas(){
+  const bodegas = ['Principal','Bodega Sur'];
+  document.getElementById('warehouse-grid').innerHTML = bodegas.map(b=>{
+    const items = products.filter(p=>p.bodega===b);
+    const total = items.reduce((a,p)=>a+p.stock,0);
+    const bajos = items.filter(p=>estadoDe(p)!=='ok').length;
+    return `<div class="warehouse-card">
+      <h3>${b === 'Principal' ? 'Bodega principal' : b}</h3>
+      <div class="wh-sub">${items.length} SKU distintos</div>
+      <div class="wh-stat"><span>Unidades totales</span><span>${total.toLocaleString('es-CO')}</span></div>
+      <div class="wh-stat"><span>Productos en alerta</span><span style="color:${bajos?'var(--amber)':'var(--green)'}">${bajos}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderReportes(){
+  document.getElementById('rep-agotados').textContent = products.filter(p=>p.stock===0).length;
+}
+
+function renderAll(){
+  renderDashboard();
+  renderProductos();
+  renderMovimientos();
+  renderPedidos();
+  renderBodegas();
+  renderReportes();
+  fillProductSelect(document.getElementById('mov-producto'));
+  fillProductSelect(document.getElementById('pedido-producto'));
+}
+
+/* ==================== NAVEGACIÓN DE VISTAS ==================== */
+const titles = {
+  dashboard:['Panel general','Martes, 14 de julio — Bodega principal'],
+  productos:['Productos','Catálogo completo de inventario'],
+  movimientos:['Movimientos','Historial de entradas y salidas'],
+  pedidos:['Pedidos a proveedor','Órdenes de compra en curso'],
+  bodegas:['Bodegas','Distribución del inventario por sede'],
+  reportes:['Reportes','Indicadores y exportación de datos'],
+};
+function goto(view){
+  document.querySelectorAll('.side-link').forEach(l=> l.classList.toggle('active', l.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v=> v.classList.toggle('active', v.id === 'view-'+view));
+  document.getElementById('view-title').textContent = titles[view][0];
+  document.getElementById('view-sub').textContent = titles[view][1];
+}
+document.querySelectorAll('.side-link').forEach(l=> l.addEventListener('click', ()=> goto(l.dataset.view)));
+document.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=> goto(el.dataset.goto)));
+
+/* ==================== BÚSQUEDA Y FILTROS ==================== */
+document.getElementById('search-input').addEventListener('input', ()=>{ renderProductos(); renderDashboard(); });
+document.getElementById('filter-bodega').addEventListener('change', renderProductos);
+document.getElementById('filter-estado').addEventListener('change', renderProductos);
+document.getElementById('filter-tipo-mov').addEventListener('change', renderMovimientos);
+document.querySelectorAll('#view-productos th.sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    if(sortState.key === th.dataset.sort) sortState.dir *= -1;
+    else { sortState.key = th.dataset.sort; sortState.dir = 1; }
+    renderProductos();
+  });
+});
+
+/* ==================== MODAL: MOVIMIENTO ==================== */
+const modalMov = document.getElementById('modal-movimiento');
+let movTipo = 'in';
+document.getElementById('btn-nuevo-mov').addEventListener('click', ()=> modalMov.classList.add('active'));
+document.getElementById('tipo-in').addEventListener('click', ()=>{
+  movTipo='in';
+  document.getElementById('tipo-in').classList.add('active-in');
+  document.getElementById('tipo-out').classList.remove('active-out');
+});
+document.getElementById('tipo-out').addEventListener('click', ()=>{
+  movTipo='out';
+  document.getElementById('tipo-out').classList.add('active-out');
+  document.getElementById('tipo-in').classList.remove('active-in');
+});
+document.getElementById('mov-guardar').addEventListener('click', ()=>{
+  const sku = document.getElementById('mov-producto').value;
+  const cantidad = parseInt(document.getElementById('mov-cantidad').value) || 0;
+  const bodega = document.getElementById('mov-bodega').value;
+  const ref = document.getElementById('mov-ref').value.trim();
+  const p = products.find(x=>x.sku===sku);
+  if(!p || cantidad<=0){ showToast('Completa cantidad válida'); return; }
+  if(movTipo==='out' && cantidad > p.stock){ showToast('No hay suficiente stock para esa salida'); return; }
+  p.stock += movTipo==='in' ? cantidad : -cantidad;
+  movements.unshift({
+    kind: movTipo,
+    title: (movTipo==='in' ? 'Entrada' : 'Salida') + (ref ? ' — '+ref : ''),
+    desc: `${p.name} · ${bodega}`,
+    qty: cantidad, sku: p.sku
+  });
+  modalMov.classList.remove('active');
+  document.getElementById('mov-ref').value='';
+  showToast(`Movimiento registrado: ${movTipo==='in'?'+':'−'}${cantidad} ${p.name}`);
+  renderAll();
+});
+
+/* ==================== MODAL: DETALLE PRODUCTO ==================== */
+const modalDet = document.getElementById('modal-detalle');
+let detalleSku = null;
+document.addEventListener('click', (e)=>{
+  const tr = e.target.closest('tr[data-sku]');
+  if(!tr) return;
+  detalleSku = tr.dataset.sku;
+  const p = products.find(x=>x.sku===detalleSku);
+  const estado = estadoDe(p);
+  document.getElementById('detalle-nombre').textContent = p.name;
+  const hist = movements.filter(m=>m.sku===p.sku).slice(0,4);
+  document.getElementById('detalle-body').innerHTML = `
+    <div class="detail-row"><span>SKU</span><span class="mono">${p.sku}</span></div>
+    <div class="detail-row"><span>Categoría</span><span>${p.cat}</span></div>
+    <div class="detail-row"><span>Bodega</span><span>${p.bodega}</span></div>
+    <div class="detail-row"><span>Stock actual</span><span>${p.stock} uds</span></div>
+    <div class="detail-row"><span>Stock mínimo</span><span>${p.min} uds</span></div>
+    <div class="detail-row"><span>Estado</span><span>${pillHtml(estado)}</span></div>
+    <div style="margin-top:16px; font-size:0.78rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;">Últimos movimientos</div>
+    <div style="margin-top:8px;">${hist.length ? hist.map(m=>`<div class="detail-row"><span>${m.title}</span><span class="${m.kind}">${m.kind==='in'?'+':'−'}${m.qty}</span></div>`).join('') : '<div class="detail-row"><span>Sin movimientos registrados</span><span></span></div>'}</div>
+  `;
+  modalDet.classList.add('active');
+});
+document.getElementById('detalle-registrar').addEventListener('click', ()=>{
+  modalDet.classList.remove('active');
+  document.getElementById('mov-producto').value = detalleSku;
+  modalMov.classList.add('active');
+});
+
+/* ==================== MODAL: NUEVO PEDIDO ==================== */
+const modalPedido = document.getElementById('modal-pedido');
+document.getElementById('btn-nuevo-pedido').addEventListener('click', ()=> modalPedido.classList.add('active'));
+document.getElementById('pedido-guardar').addEventListener('click', ()=>{
+  const proveedor = document.getElementById('pedido-proveedor').value.trim();
+  const sku = document.getElementById('pedido-producto').value;
+  const cantidad = parseInt(document.getElementById('pedido-cantidad').value) || 0;
+  const fecha = document.getElementById('pedido-fecha').value || '—';
+  const p = products.find(x=>x.sku===sku);
+  if(!proveedor || cantidad<=0){ showToast('Completa proveedor y cantidad'); return; }
+  purchaseOrders.unshift({proveedor, producto:p.name, cantidad, fecha, estado:'Pendiente'});
+  modalPedido.classList.remove('active');
+  document.getElementById('pedido-proveedor').value='';
+  showToast('Pedido creado correctamente');
+  renderAll();
+});
+
+/* ==================== CERRAR MODALES ==================== */
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=> btn.closest('.overlay').classList.remove('active'));
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('active'); });
+});
+
+/* ==================== EXPORTAR CSV ==================== */
+function downloadCsv(filename, rows){
+  const csv = rows.map(r=> r.map(c=> `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+document.getElementById('btn-export-csv').addEventListener('click', ()=>{
+  const rows = [['SKU','Producto','Categoría','Bodega','Stock','Estado']];
+  products.forEach(p=> rows.push([p.sku,p.name,p.cat,p.bodega,p.stock,estadoDe(p)]));
+  downloadCsv('inventario.csv', rows);
+  showToast('Inventario exportado');
+});
+document.getElementById('btn-report-inventario').addEventListener('click', ()=> document.getElementById('btn-export-csv').click());
+document.getElementById('btn-report-movimientos').addEventListener('click', ()=>{
+  const rows = [['Tipo','Título','Detalle','Cantidad','SKU']];
+  movements.forEach(m=> rows.push([m.kind==='in'?'Entrada':'Salida', m.title, m.desc, m.qty, m.sku]));
+  downloadCsv('movimientos.csv', rows);
+  showToast('Movimientos exportados');
+});
+
+/* ==================== INIT ==================== */
+renderAll();
+</script>
+</body>
+</html>

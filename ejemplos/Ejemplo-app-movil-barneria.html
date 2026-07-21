@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Corte — App de turnos para barbería</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#17181C;
+    --panel:#1F2127;
+    --gold:#C9A227;
+    --cream:#F2EDE4;
+    --red:#B8402F;
+    --muted:#8B8D96;
+    --ok:#3E9268;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background: radial-gradient(circle at 50% 0%, #2a2d35, #0e0f12 70%);
+    font-family:'Inter', sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh;
+    padding:40px 16px;
+  }
+  h1,h2,h3,.display{font-family:'Oswald', sans-serif; letter-spacing:0.01em;}
+  button{font-family:inherit; cursor:pointer;}
+
+  .phone{
+    width:390px;
+    height:844px;
+    max-height:92vh;
+    background:var(--navy);
+    border-radius:46px;
+    border:10px solid #0a0a0b;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.04);
+    position:relative;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    flex-shrink:0;
+  }
+  .notch{
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:120px; height:26px; background:#0a0a0b; border-radius:0 0 16px 16px; z-index:30;
+  }
+  .screen{
+    flex:1; overflow-y:auto; color:var(--cream); display:flex; flex-direction:column;
+    -ms-overflow-style:none; scrollbar-width:none;
+  }
+  .screen::-webkit-scrollbar{display:none;}
+  .page{display:none; flex-direction:column; flex:1;}
+  .page.active{display:flex;}
+
+  .status-bar{height:40px; flex-shrink:0;}
+
+  .top{padding:14px 22px 6px;}
+  .greeting{font-size:0.82rem; color:var(--muted);}
+  .greeting strong{color:var(--cream);}
+  .top h1{font-size:1.5rem; margin-top:4px;}
+
+  .next-card{
+    margin:18px 20px 6px;
+    background:linear-gradient(135deg, #23262F, #191B20);
+    border:1px solid rgba(201,162,39,0.25);
+    border-radius:18px; padding:18px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .next-card .tag{font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold); font-weight:600; margin-bottom:6px;}
+  .next-card h3{font-size:1.05rem; font-weight:600; font-family:'Inter'; margin-bottom:3px;}
+  .next-card p{font-size:0.8rem; color:var(--muted);}
+  .avatar-circle{
+    width:46px; height:46px; border-radius:50%;
+    background:var(--gold); color:var(--navy); font-family:'Oswald'; font-weight:600;
+    display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;
+  }
+
+  .section-label{padding:22px 20px 10px; display:flex; justify-content:space-between; align-items:center;}
+  .section-label h2{font-size:1rem; font-family:'Inter'; font-weight:700;}
+  .section-label a, .section-label button{font-size:0.78rem; color:var(--gold); text-decoration:none; font-weight:600; background:none; border:none;}
+
+  .services-scroll{display:flex; gap:12px; padding:0 20px 4px; overflow-x:auto;}
+  .service-chip{
+    flex:0 0 auto; background:var(--panel); border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px; padding:14px 16px; min-width:128px; text-align:left;
+  }
+  .service-chip.selected{border-color:var(--gold); background:#26241a;}
+  .service-chip .icon{width:30px; height:30px; margin-bottom:10px; color:var(--gold);}
+  .service-chip h4{font-size:0.86rem; font-family:'Inter'; font-weight:600; margin-bottom:3px;}
+  .service-chip span{font-size:0.75rem; color:var(--muted);}
+
+  .barber-list{padding:4px 20px; display:flex; flex-direction:column; gap:10px;}
+  .barber-row{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:var(--panel); border-radius:14px; padding:12px 14px;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .barber-row.selected{border-color:var(--gold); background:#26241a;}
+  .barber-photo{
+    width:44px; height:44px; border-radius:12px; background:#3a3d46;
+    display:flex; align-items:center; justify-content:center; font-family:'Oswald'; font-size:0.95rem; color:var(--cream); flex-shrink:0;
+  }
+  .barber-info{flex:1;}
+  .barber-info h4{font-size:0.88rem; font-family:'Inter'; font-weight:600;}
+  .barber-info span{font-size:0.74rem; color:var(--muted);}
+  .rating{font-size:0.75rem; color:var(--gold); font-weight:600;}
+
+  .date-tabs{display:flex; gap:8px; padding:0 20px 8px;}
+  .date-tab{flex:1; padding:9px 6px; border-radius:10px; text-align:center; font-size:0.78rem; font-weight:600; background:var(--panel); border:1px solid rgba(255,255,255,0.08); color:var(--muted);}
+  .date-tab.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
+
+  .slots{display:flex; gap:10px; padding:6px 20px 10px; overflow-x:auto;}
+  .slot{
+    flex:0 0 auto; padding:10px 16px; border-radius:10px; font-size:0.82rem; font-weight:600;
+    background:var(--panel); border:1px solid rgba(255,255,255,0.08); color:var(--cream);
+  }
+  .slot.active{background:var(--gold); color:var(--navy); border-color:var(--gold);}
+  .slot.disabled{opacity:0.35; text-decoration:line-through; pointer-events:none;}
+
+  .book-bar{padding:16px 20px 10px; margin-top:auto;}
+  .book-btn{
+    width:100%; padding:16px; border:none; border-radius:14px;
+    background:var(--red); color:var(--cream); font-family:'Oswald'; font-weight:600;
+    font-size:0.98rem; letter-spacing:0.03em; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .book-btn:disabled{opacity:0.5;}
+
+  .bottom-nav{
+    background:#101114; border-top:1px solid rgba(255,255,255,0.06);
+    display:flex; justify-content:space-around; padding:12px 10px 20px; flex-shrink:0;
+  }
+  .nav-item{display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:0.65rem; font-weight:600; background:none; border:none;}
+  .nav-item.active{color:var(--gold);}
+  .nav-item svg{width:22px; height:22px;}
+
+  /* TURNOS PAGE */
+  .appt-card{margin:0 20px 12px; background:var(--panel); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:16px;}
+  .appt-card .row{display:flex; justify-content:space-between; align-items:center;}
+  .appt-card h4{font-size:0.92rem; font-family:'Inter'; font-weight:600;}
+  .appt-card p{font-size:0.78rem; color:var(--muted); margin-top:3px;}
+  .appt-status{font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:4px 9px; border-radius:20px;}
+  .appt-status.upcoming{background:rgba(201,162,39,0.15); color:var(--gold);}
+  .appt-status.done{background:rgba(62,146,104,0.15); color:var(--ok);}
+  .appt-cancel{margin-top:12px; width:100%; padding:9px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:none; color:var(--muted); font-size:0.76rem; font-weight:600;}
+  .empty-state{margin:30px 20px; text-align:center; color:var(--muted); font-size:0.85rem;}
+
+  /* PERFIL PAGE */
+  .profile-head{display:flex; flex-direction:column; align-items:center; padding:26px 20px 10px;}
+  .profile-avatar{width:74px; height:74px; border-radius:50%; background:var(--gold); color:var(--navy); font-family:'Oswald'; font-size:1.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:12px;}
+  .profile-head h3{font-size:1.1rem;}
+  .profile-head p{font-size:0.8rem; color:var(--muted); margin-top:2px;}
+  .profile-field{margin:0 20px 12px;}
+  .profile-field label{display:block; font-size:0.72rem; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;}
+  .profile-field input{width:100%; background:var(--panel); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:11px 13px; color:var(--cream); font-size:0.86rem;}
+  .profile-save{margin:14px 20px 0; padding:14px; border-radius:12px; border:none; background:var(--gold); color:var(--navy); font-family:'Oswald'; font-weight:600; font-size:0.9rem;}
+
+  /* CONFIRMATION TOAST */
+  .toast{
+    position:absolute; left:20px; right:20px; bottom:100px; background:var(--ok); color:#fff;
+    padding:13px 16px; border-radius:12px; font-size:0.82rem; font-weight:600; text-align:center;
+    box-shadow:0 12px 24px rgba(0,0,0,0.35); transform:translateY(20px); opacity:0; pointer-events:none;
+    transition:all .25s ease; z-index:40;
+  }
+  .toast.show{transform:translateY(0); opacity:1;}
+
+  .device-note{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    font-family:'Inter'; font-size:0.78rem; color:#6a6d78; text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="status-bar"></div>
+
+    <!-- ===== PÁGINA: INICIO ===== -->
+    <div class="page active" id="page-inicio">
+      <div class="top">
+        <p class="greeting">Buen día, <strong>Andrés</strong></p>
+        <h1>Reserva tu turno</h1>
+      </div>
+
+      <div class="next-card">
+        <div>
+          <p class="tag">Próxima cita</p>
+          <h3 id="next-service">Corte + Barba</h3>
+          <p id="next-when">Hoy, 4:30 p.m. — con Kevin</p>
+        </div>
+        <div class="avatar-circle" id="next-avatar">K</div>
+      </div>
+
+      <div class="section-label"><h2>Servicios</h2></div>
+      <div class="services-scroll" id="services-scroll"></div>
+
+      <div class="section-label"><h2>Elige tu barbero</h2></div>
+      <div class="barber-list" id="barber-list"></div>
+
+      <div class="section-label"><h2>Elige el día</h2></div>
+      <div class="date-tabs" id="date-tabs"></div>
+
+      <div class="section-label" style="padding-top:6px;"><h2>Horarios disponibles</h2></div>
+      <div class="slots" id="slots"></div>
+
+      <div class="book-bar">
+        <button class="book-btn" id="book-btn">Confirmar turno · $40.000</button>
+      </div>
+    </div>
+
+    <!-- ===== PÁGINA: TURNOS ===== -->
+    <div class="page" id="page-turnos">
+      <div class="top"><h1 style="padding-top:10px;">Tus turnos</h1></div>
+      <div class="section-label"><h2>Próximos</h2></div>
+      <div id="appts-upcoming"></div>
+      <div class="section-label"><h2>Historial</h2></div>
+      <div id="appts-past"></div>
+    </div>
+
+    <!-- ===== PÁGINA: PERFIL ===== -->
+    <div class="page" id="page-perfil">
+      <div class="profile-head">
+        <div class="profile-avatar">A</div>
+        <h3 id="profile-name-display">Andrés Molina</h3>
+        <p>Cliente desde marzo 2024</p>
+      </div>
+      <div class="profile-field"><label>Nombre completo</label><input type="text" id="profile-name" value="Andrés Molina"></div>
+      <div class="profile-field"><label>Celular</label><input type="tel" id="profile-phone" value="+57 315 402 8871"></div>
+      <div class="profile-field"><label>Correo</label><input type="email" id="profile-email" value="andres.molina@correo.com"></div>
+      <div class="profile-field"><label>Barbero favorito</label><input type="text" id="profile-barber" value="Kevin Ortiz" readonly></div>
+      <button class="profile-save" id="profile-save-btn">Guardar cambios</button>
+    </div>
+
+    <div class="toast" id="toast">Turno confirmado ✓</div>
+
+    <div class="bottom-nav">
+      <button class="nav-item active" data-page="inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9Z"/></svg>
+        Inicio
+      </button>
+      <button class="nav-item" data-page="turnos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        Turnos
+      </button>
+      <button class="nav-item" data-page="perfil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Perfil
+      </button>
+    </div>
+  </div>
+</div>
+
+<p class="device-note">Vista fija de app móvil — se ve igual en celular y en computador</p>
+
+<script>
+/* ==================== DATOS ==================== */
+const services = [
+  {id:'corte', name:'Corte clásico', price:28000, dur:'30 min', icon:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 8.5L19 19M19 5L8.5 15.5"/></svg>'},
+  {id:'barba', name:'Diseño de barba', price:18000, dur:'20 min', icon:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 14c0-5 3-9 8-9s8 4 8 9-3 6-8 6-8-1-8-6Z"/></svg>'},
+  {id:'combo', name:'Corte + Barba', price:40000, dur:'50 min', icon:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'},
+];
+const barbers = [
+  {id:'kevin', name:'Kevin Ortiz', tag:'Especialista en fade', rating:4.9, letter:'K'},
+  {id:'mauricio', name:'Mauricio Ríos', tag:'Barba y afeitado clásico', rating:4.8, letter:'M'},
+];
+const dateTabs = ['Hoy','Mañana','Jue 16'];
+const allSlots = {
+  0: ['2:00 p.m.','2:30 p.m.','4:30 p.m.','5:00 p.m.','6:15 p.m.'],
+  1: ['9:00 a.m.','9:30 a.m.','11:00 a.m.','3:00 p.m.'],
+  2: ['10:00 a.m.','1:00 p.m.','2:30 p.m.','5:30 p.m.'],
+};
+const bookedOut = { 0: ['2:30 p.m.'] };
+
+let state = {
+  service: 'combo',
+  barber: 'kevin',
+  dateIdx: 0,
+  slot: '4:30 p.m.',
+};
+
+let appointments = [
+  {service:'Corte + Barba', barber:'Kevin Ortiz', letter:'K', when:'Hoy, 4:30 p.m.', status:'upcoming', price:40000},
+  {service:'Corte clásico', barber:'Mauricio Ríos', letter:'M', when:'2 jul, 11:00 a.m.', status:'done', price:28000},
+  {service:'Diseño de barba', barber:'Kevin Ortiz', letter:'K', when:'18 jun, 3:00 p.m.', status:'done', price:18000},
+];
+
+const money = n => '$' + n.toLocaleString('es-CO');
+
+/* ==================== RENDER: INICIO ==================== */
+function renderServices(){
+  document.getElementById('services-scroll').innerHTML = services.map(s=>`
+    <button class="service-chip ${state.service===s.id?'selected':''}" data-service="${s.id}">
+      ${s.icon}<h4>${s.name}</h4><span>${money(s.price)} · ${s.dur}</span>
+    </button>`).join('');
+}
+function renderBarbers(){
+  document.getElementById('barber-list').innerHTML = barbers.map(b=>`
+    <button class="barber-row ${state.barber===b.id?'selected':''}" data-barber="${b.id}">
+      <div class="barber-photo">${b.letter}</div>
+      <div class="barber-info"><h4>${b.name}</h4><span>${b.tag}</span></div>
+      <span class="rating">★ ${b.rating}</span>
+    </button>`).join('');
+}
+function renderDateTabs(){
+  document.getElementById('date-tabs').innerHTML = dateTabs.map((d,i)=>`
+    <button class="date-tab ${state.dateIdx===i?'active':''}" data-date="${i}">${d}</button>`).join('');
+}
+function renderSlots(){
+  const slots = allSlots[state.dateIdx] || [];
+  const booked = bookedOut[state.dateIdx] || [];
+  if(!slots.includes(state.slot)) state.slot = slots.find(s=>!booked.includes(s)) || null;
+  document.getElementById('slots').innerHTML = slots.map(s=>{
+    const isBooked = booked.includes(s);
+    return `<span class="slot ${state.slot===s?'active':''} ${isBooked?'disabled':''}" data-slot="${s}">${s}${isBooked?' · ocupado':''}</span>`;
+  }).join('');
+}
+function renderBookBtn(){
+  const s = services.find(x=>x.id===state.service);
+  const btn = document.getElementById('book-btn');
+  btn.textContent = state.slot ? `Confirmar turno · ${money(s.price)}` : 'Elige un horario disponible';
+  btn.disabled = !state.slot;
+}
+function renderNextCard(){
+  const next = appointments.find(a=>a.status==='upcoming');
+  if(next){
+    document.getElementById('next-service').textContent = next.service;
+    document.getElementById('next-when').textContent = `${next.when} — con ${next.barber.split(' ')[0]}`;
+    document.getElementById('next-avatar').textContent = next.letter;
+  } else {
+    document.getElementById('next-service').textContent = 'Sin citas próximas';
+    document.getElementById('next-when').textContent = 'Reserva tu próximo turno abajo';
+  }
+}
+function renderInicio(){
+  renderServices(); renderBarbers(); renderDateTabs(); renderSlots(); renderBookBtn(); renderNextCard();
+}
+
+/* ==================== RENDER: TURNOS ==================== */
+function apptCardHtml(a, showCancel){
+  return `<div class="appt-card">
+    <div class="row">
+      <div>
+        <h4>${a.service}</h4>
+        <p>${a.when} — con ${a.barber}</p>
+      </div>
+      <span class="appt-status ${a.status}">${a.status==='upcoming'?'Próxima':'Completado'}</span>
+    </div>
+    ${showCancel ? '<button class="appt-cancel" data-cancel>Cancelar turno</button>' : ''}
+  </div>`;
+}
+function renderTurnos(){
+  const upcoming = appointments.filter(a=>a.status==='upcoming');
+  const past = appointments.filter(a=>a.status==='done');
+  document.getElementById('appts-upcoming').innerHTML = upcoming.length
+    ? upcoming.map(a=>apptCardHtml(a,true)).join('')
+    : '<p class="empty-state">No tienes turnos próximos.</p>';
+  document.getElementById('appts-past').innerHTML = past.length
+    ? past.map(a=>apptCardHtml(a,false)).join('')
+    : '<p class="empty-state">Aún no tienes historial.</p>';
+}
+
+/* ==================== NAVEGACIÓN ==================== */
+function gotoPage(page){
+  document.querySelectorAll('.page').forEach(p=> p.classList.toggle('active', p.id === 'page-'+page));
+  document.querySelectorAll('.nav-item').forEach(n=> n.classList.toggle('active', n.dataset.page === page));
+  if(page==='turnos') renderTurnos();
+}
+document.querySelectorAll('.nav-item').forEach(n=> n.addEventListener('click', ()=> gotoPage(n.dataset.page)));
+
+/* ==================== INTERACCIONES ==================== */
+document.getElementById('services-scroll').addEventListener('click', e=>{
+  const chip = e.target.closest('[data-service]');
+  if(!chip) return;
+  state.service = chip.dataset.service;
+  renderInicio();
+});
+document.getElementById('barber-list').addEventListener('click', e=>{
+  const row = e.target.closest('[data-barber]');
+  if(!row) return;
+  state.barber = row.dataset.barber;
+  renderBarbers();
+});
+document.getElementById('date-tabs').addEventListener('click', e=>{
+  const tab = e.target.closest('[data-date]');
+  if(!tab) return;
+  state.dateIdx = parseInt(tab.dataset.date);
+  renderDateTabs(); renderSlots(); renderBookBtn();
+});
+document.getElementById('slots').addEventListener('click', e=>{
+  const slot = e.target.closest('.slot:not(.disabled)');
+  if(!slot) return;
+  state.slot = slot.dataset.slot;
+  renderSlots(); renderBookBtn();
+});
+
+document.getElementById('book-btn').addEventListener('click', ()=>{
+  if(!state.slot) return;
+  const s = services.find(x=>x.id===state.service);
+  const b = barbers.find(x=>x.id===state.barber);
+  appointments.unshift({
+    service: s.name, barber: b.name, letter: b.letter,
+    when: `${dateTabs[state.dateIdx]}, ${state.slot}`, status:'upcoming', price:s.price
+  });
+  const toast = document.getElementById('toast');
+  toast.textContent = `Turno confirmado — ${s.name} con ${b.name.split(' ')[0]} ✓`;
+  toast.classList.add('show');
+  setTimeout(()=> toast.classList.remove('show'), 2600);
+  renderInicio();
+});
+
+document.getElementById('appts-upcoming').addEventListener('click', e=>{
+  if(!e.target.closest('[data-cancel]')) return;
+  const card = e.target.closest('.appt-card');
+  const idx = appointments.findIndex(a=> a.status==='upcoming');
+  if(idx>-1){ appointments.splice(idx,1); renderTurnos(); renderNextCard(); }
+});
+
+document.getElementById('profile-save-btn').addEventListener('click', ()=>{
+  const name = document.getElementById('profile-name').value.trim() || 'Andrés Molina';
+  document.getElementById('profile-name-display').textContent = name;
+  const toast = document.getElementById('toast');
+  toast.textContent = 'Perfil actualizado ✓';
+  toast.classList.add('show');
+  setTimeout(()=> toast.classList.remove('show'), 2200);
+});
+
+/* ==================== INIT ==================== */
+renderInicio();
+</script>
+
+</body>
+</html>
