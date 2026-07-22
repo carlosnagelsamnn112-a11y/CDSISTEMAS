@@ -194,18 +194,36 @@
 
   @media (max-width:1000px){
     .app{grid-template-columns:1fr;}
-    .sidebar{display:none;}
+    .sidebar{display:none; position:fixed; top:0; left:0; width:260px; height:100vh; z-index:200; box-shadow:4px 0 20px rgba(0,0,0,0.3);}
+    .sidebar.open{display:flex;}
+    .sidebar-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:199;}
+    .sidebar-overlay.open{display:block;}
+    .hamburger-btn{display:flex !important;}
     .stats{grid-template-columns:repeat(2,1fr);}
     .grid-2{grid-template-columns:1fr;}
     .warehouse-grid, .report-grid{grid-template-columns:1fr;}
     .search-box{width:100%;}
   }
+  .hamburger-btn{display:none; position:fixed; top:14px; left:14px; z-index:201; width:40px; height:40px; border-radius:8px; border:1px solid var(--line); background:var(--panel); align-items:center; justify-content:center; cursor:pointer;}
+  .hamburger-btn svg{width:20px; height:20px; color:var(--ink);}
+  .skip-link{position:fixed; top:-100%; left:16px; z-index:9999; padding:12px 24px; background:var(--steel); color:#fff; font-weight:700; border-radius:8px; font-size:0.85rem; transition:top 0.2s;}
+  .skip-link:focus{top:16px;}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+    html{scroll-behavior:auto;}
+  }
 </style>
 </head>
 <body>
 
+<a href="#main-content" class="skip-link">Saltar al contenido</a>
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar" aria-label="Navegación del sistema">
     <div class="side-brand"><span class="mark">FN</span><span>FERRETERA DEL NORTE</span></div>
 
     <div class="side-label">General</div>
@@ -236,7 +254,7 @@
     </button>
   </aside>
 
-  <main>
+  <main id="main-content">
     <!-- ===== TOPBAR (común a todas las vistas) ===== -->
     <div class="topbar">
       <div>
@@ -385,7 +403,7 @@
 </div>
 
 <!-- MODAL: Registrar movimiento -->
-<div class="overlay" id="modal-movimiento">
+<div class="overlay" id="modal-movimiento" role="dialog" aria-modal="true" aria-labelledby="modalMovTitle">
   <div class="modal">
     <div class="modal-head"><h3>Registrar movimiento</h3><button class="modal-close" data-close>✕</button></div>
     <div class="modal-body">
@@ -426,7 +444,7 @@
 </div>
 
 <!-- MODAL: Detalle de producto -->
-<div class="overlay" id="modal-detalle">
+<div class="overlay" id="modal-detalle" role="dialog" aria-modal="true" aria-labelledby="modalDetTitle">
   <div class="modal">
     <div class="modal-head"><h3 id="detalle-nombre">Producto</h3><button class="modal-close" data-close>✕</button></div>
     <div class="modal-body" id="detalle-body"></div>
@@ -438,7 +456,7 @@
 </div>
 
 <!-- MODAL: Nuevo pedido a proveedor -->
-<div class="overlay" id="modal-pedido">
+<div class="overlay" id="modal-pedido" role="dialog" aria-modal="true" aria-labelledby="modalPedTitle">
   <div class="modal">
     <div class="modal-head"><h3>Nuevo pedido a proveedor</h3><button class="modal-close" data-close>✕</button></div>
     <div class="modal-body">
@@ -472,7 +490,7 @@
 
 <script>
 /* ==================== DATOS ==================== */
-let products = [
+const DEFAULT_PRODUCTS = [
   {sku:'FN-CM-1050', name:'Cemento gris x50kg', cat:'Materiales · Cemex', bodega:'Principal', stock:14, min:40},
   {sku:'FN-AC-3820', name:'Varilla corrugada 3/8"', cat:'Acero · Diaco', bodega:'Bodega Sur', stock:0, min:30},
   {sku:'FN-PT-2205', name:'Pintura acrílica blanca 5gal', cat:'Acabados · Pintuco', bodega:'Principal', stock:31, min:35},
@@ -486,6 +504,9 @@ let products = [
   {sku:'FN-HD-4110', name:'Codo PVC 4" x 90°', cat:'Hidráulica · Pavco', bodega:'Bodega Sur', stock:63, min:30},
   {sku:'FN-AC-3830', name:'Malla electrosoldada', cat:'Acero · Diaco', bodega:'Bodega Sur', stock:26, min:25},
 ];
+
+let products = JSON.parse(localStorage.getItem('fer_products')) || [...DEFAULT_PRODUCTS];
+function saveProducts() { localStorage.setItem('fer_products', JSON.stringify(products)); }
 
 let movements = [
   {kind:'in', title:'Entrada — Cemex', desc:'Cemento gris x50kg · Bodega principal', qty:400, sku:'FN-CM-1050'},
@@ -648,11 +669,39 @@ function goto(view){
   document.getElementById('view-title').textContent = titles[view][0];
   document.getElementById('view-sub').textContent = titles[view][1];
 }
-document.querySelectorAll('.side-link').forEach(l=> l.addEventListener('click', ()=> goto(l.dataset.view)));
-document.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=> goto(el.dataset.goto)));
+document.querySelectorAll('.side-link').forEach(l=> l.addEventListener('click', ()=>{
+  goto(l.dataset.view);
+  closeSidebar();
+}));
+document.querySelectorAll('[data-goto]').forEach(el=> el.addEventListener('click', ()=>{ el.dataset.goto; closeSidebar(); }));
+
+/* ==================== HAMBURGER / SIDEBAR MÓVIL ==================== */
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+function openSidebar() {
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.add('open');
+  hamburgerBtn.setAttribute('aria-expanded', 'true');
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.remove('open');
+  hamburgerBtn.setAttribute('aria-expanded', 'false');
+}
+hamburgerBtn.addEventListener('click', () => {
+  if (sidebar.classList.contains('open')) closeSidebar();
+  else openSidebar();
+});
+sidebarOverlay.addEventListener('click', closeSidebar);
 
 /* ==================== BÚSQUEDA Y FILTROS ==================== */
-document.getElementById('search-input').addEventListener('input', ()=>{ renderProductos(); renderDashboard(); });
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', ()=>{
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(()=>{ renderProductos(); renderDashboard(); }, 250);
+});
 document.getElementById('filter-bodega').addEventListener('change', renderProductos);
 document.getElementById('filter-estado').addEventListener('change', renderProductos);
 document.getElementById('filter-tipo-mov').addEventListener('change', renderMovimientos);
@@ -693,6 +742,7 @@ document.getElementById('mov-guardar').addEventListener('click', ()=>{
     desc: `${p.name} · ${bodega}`,
     qty: cantidad, sku: p.sku
   });
+  saveProducts();
   modalMov.classList.remove('active');
   document.getElementById('mov-ref').value='';
   showToast(`Movimiento registrado: ${movTipo==='in'?'+':'−'}${cantidad} ${p.name}`);

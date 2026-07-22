@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Café & Aroma — Menú Digital Interactivo</title>
+  <meta name="description" content="Ejemplo interactivo de menú digital para restaurantes y cafeterías con sistema de pedidos por WhatsApp.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #7c593c;
+      --primary-dark: #5c3f26;
+      --primary-light: #f7ede2;
+      --dark: #231911;
+      --accent: #d96b43;
+      --bg: #faf6f0;
+      --white: #ffffff;
+      --line: rgba(35, 25, 17, 0.08);
+      --radius: 12px;
+      --shadow: 0 8px 30px rgba(35, 25, 17, 0.05);
+      --font-display: 'Playfair Display', serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--dark);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding-bottom: 90px; /* Espacio para barra de carrito móvil */
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      padding: 40px 0 20px;
+      position: relative;
+    }
+    .brand-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 14px;
+      color: #706256;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* DEMO NOTE */
+    .demo-bar {
+      background: #efe9de;
+      border: 1px solid rgba(124, 89, 60, 0.15);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 30px;
+      font-size: 13px;
+      text-align: center;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .demo-bar .badge {
+      background: var(--primary);
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* CATEGORÍAS */
+    .categories-nav {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 15px 0;
+      z-index: 10;
+      margin-bottom: 30px;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      white-space: nowrap;
+      display: flex;
+      gap: 10px;
+      scrollbar-width: none; /* Ocultar scrollbar Firefox */
+    }
+    .categories-nav::-webkit-scrollbar {
+      display: none; /* Ocultar scrollbar Chrome/Safari */
+    }
+    .category-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #706256;
+      background: var(--white);
+      border: 1px solid var(--line);
+      transition: all 0.2s ease;
+    }
+    .category-btn.active {
+      background: var(--primary);
+      color: var(--white);
+      border-color: var(--primary);
+    }
+
+    /* SECCIÓN DE PRODUCTOS */
+    .menu-section {
+      margin-bottom: 40px;
+    }
+    .menu-section-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      padding-bottom: 8px;
+    }
+    .menu-section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: var(--primary);
+    }
+
+    .products-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .product-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(35, 25, 17, 0.08);
+    }
+
+    .product-img {
+      width: 90px;
+      height: 90px;
+      border-radius: 8px;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .product-info {
+      flex-grow: 1;
+    }
+    .product-info h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .product-price {
+      font-family: var(--font-display);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .product-desc {
+      font-size: 13.5px;
+      color: #706256;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .add-to-cart-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .add-to-cart-btn:hover {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    /* BARRA DE CARRITO MÓVIL (INFERIOR) */
+    .cart-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 600px;
+      height: 60px;
+      background: var(--dark);
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: var(--white);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 50;
+      cursor: pointer;
+      opacity: 0;
+      transform: translate(-50%, 100px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cart-bar.active {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .cart-bar-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cart-bar-count {
+      background: var(--primary);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .cart-bar-total {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .cart-bar-action {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* MODAL DE DETALLES DEL PEDIDO / CARRITO */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 25, 17, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: var(--white);
+      width: 100%;
+      max-width: 600px;
+      border-radius: 20px 20px 0 0;
+      padding: 30px 24px;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 45px rgba(0,0,0,0.15);
+    }
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+    }
+    .modal-header h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+    }
+    .close-modal-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    /* ÍTEMS EN EL CARRITO */
+    .cart-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed var(--line);
+    }
+    .cart-item-details h4 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .cart-item-details p {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .cart-item-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .qty-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+    .qty-val {
+      font-size: 14px;
+      font-weight: 700;
+      min-width: 16px;
+      text-align: center;
+    }
+
+    /* FORMULARIO DE ENVÍO */
+    .order-form {
+      margin-top: 24px;
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #706256;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-family: var(--font-body);
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--dark);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      background: var(--white);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* BOTÓN FINAL DE PEDIDO */
+    .submit-order-btn {
+      width: 100%;
+      background: #25D366;
+      color: var(--white);
+      padding: 14px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+      margin-top: 24px;
+    }
+    .submit-order-btn:hover {
+      background: #20ba59;
+    }
+    .submit-order-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* POPUP DE SIMULACIÓN DE WHATSAPP */
+    .sim-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      width: 90%;
+      max-width: 480px;
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      z-index: 200;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      border: 1px solid var(--line);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sim-popup.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+    }
+
+    .sim-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .sim-wa-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #25D366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+    }
+    .sim-wa-icon svg { width: 22px; height: 22px; }
+    .sim-title h4 { font-size: 15px; font-weight: 700; }
+    .sim-title p { font-size: 11px; color: #888; }
+
+    .sim-bubble {
+      background: #d9fdd3;
+      border-radius: 0 10px 10px 10px;
+      padding: 14px;
+      font-size: 13px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      color: #111b21;
+      border: 1px solid #c7eeb7;
+      margin-bottom: 20px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .sim-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .sim-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .sim-btn-close {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--dark);
+    }
+    .sim-btn-close:hover { background: var(--primary-light); }
+    .sim-btn-ok {
+      background: #25D366;
+      color: var(--white);
+    }
+    .sim-btn-ok:hover { background: #20ba59; }
+
+    /* VOLVER AL PORTAFOLIO */
+    .back-to-portfolio {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-top: 20px;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      background: var(--primary-light);
+    }
+    .back-to-portfolio:hover {
+      background: var(--primary);
+      color: var(--white);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <a href="../index.html" class="back-to-portfolio">
+    ← Volver al Catálogo
+  </a>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand-logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+    </div>
+    <h1>Café & Aroma</h1>
+    <p>Menú Digital de Especialidad</p>
+  </header>
+
+  <!-- NOTA DE DEMOSTRACIÓN -->
+  <div class="demo-bar">
+    <span class="badge">DEMO DE CD SISTEMAS</span>
+    <span>Agrega productos al carrito y simula el envío a WhatsApp.</span>
+  </div>
+
+  <!-- NAVEGACIÓN DE CATEGORÍAS -->
+  <nav class="categories-nav" id="categoriesNav">
+    <button class="category-btn active" data-sec="cafes">CAFÉS</button>
+    <button class="category-btn" data-sec="pasteleria">PASTELERÍA</button>
+    <button class="category-btn" data-sec="desayunos">DESAYUNOS</button>
+    <button class="category-btn" data-sec="bebidas">BEBIDAS FRÍAS</button>
+  </nav>
+
+  <!-- CAFES -->
+  <section id="cafes" class="menu-section">
+    <h2 class="menu-section-title">Cafés de Especialidad</h2>
+    <div class="products-list">
+      
+      <article class="product-card" data-id="c1" data-name="Espresso Double" data-price="5500">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Espresso Double <span class="product-price">$5.500</span></h3>
+          <p class="product-desc">Carga doble de café espresso seleccionado, de notas achocolatadas y cuerpo intenso.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+      <article class="product-card" data-id="c2" data-name="Café Latte" data-price="7800">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8z"/><path d="M6 18c0 1 2 2 4 2s4-1 4-2"/><line x1="6" y1="2" x2="6" y2="4"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Café Latte <span class="product-price">$7.800</span></h3>
+          <p class="product-desc">Una base de espresso intenso balanceada con leche vaporizada cremosa y una fina capa de microespuma.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+      <article class="product-card" data-id="c3" data-name="Capuccino de Almendras" data-price="9200">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8z"/><circle cx="10" cy="13" r="2"/><line x1="10" y1="2" x2="10" y2="4"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Capuccino de Almendras <span class="product-price">$9.200</span></h3>
+          <p class="product-desc">Capuccino clásico preparado con leche de almendras seleccionada, decorado con una lluvia de canela.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- PASTELERÍA -->
+  <section id="pasteleria" class="menu-section">
+    <h2 class="menu-section-title">Pastelería Horneada</h2>
+    <div class="products-list">
+      
+      <article class="product-card" data-id="p1" data-name="Croissant de Mantequilla" data-price="6200">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Croissant de Mantequilla <span class="product-price">$6.200</span></h3>
+          <p class="product-desc">Hojaldre francés crujiente por fuera, suave por dentro, elaborado 100% con mantequilla de campo.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+      <article class="product-card" data-id="p2" data-name="Tarta de Frutos Rojos" data-price="8500">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm1 13h-2v-6h2v6z"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Tarta de Frutos Rojos <span class="product-price">$8.500</span></h3>
+          <p class="product-desc">Tarta crocante rellena de crema pastelera casera y coronada con una selección fresca de fresas y arándanos.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- DESAYUNOS -->
+  <section id="desayunos" class="menu-section">
+    <h2 class="menu-section-title">Desayunos & Brunch</h2>
+    <div class="products-list">
+      
+      <article class="product-card" data-id="d1" data-name="Tostada de Aguacate" data-price="14500">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Tostada de Aguacate <span class="product-price">$14.500</span></h3>
+          <p class="product-desc">Tostada de pan de masa madre con aguacate machacado, tomates cherry confitados, semillas de sésamo y aceite de oliva.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+      <article class="product-card" data-id="d2" data-name="Brunch Completo" data-price="22000">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 0 1 15 0H3z"/><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Brunch Completo <span class="product-price">$22.000</span></h3>
+          <p class="product-desc">Huevos revueltos, porción de tocino crujiente, tostadas de masa madre, fruta picada y un vaso de jugo de naranja natural.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- BEBIDAS FRÍAS -->
+  <section id="bebidas" class="menu-section">
+    <h2 class="menu-section-title">Bebidas Frías</h2>
+    <div class="products-list">
+      
+      <article class="product-card" data-id="f1" data-name="Cold Brew Tonic" data-price="8900">
+        <div class="product-img">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h12l-2 18H8L6 3z"/><line x1="6" y1="8" x2="18" y2="8"/></svg>
+        </div>
+        <div class="product-info">
+          <h3>Cold Brew Tonic <span class="product-price">$8.900</span></h3>
+          <p class="product-desc">Café extraído en frío durante 18 horas, servido sobre hielo, agua tónica premium y un gajo de limón.</p>
+          <button class="add-to-cart-btn">+ Agregar</button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- BARRA DE CARRITO INFERIOR -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-bar-info">
+    <span class="cart-bar-count" id="cartCount">0</span>
+    <span class="cart-bar-total" id="cartTotal">$0</span>
+  </div>
+  <div class="cart-bar-action">
+    Ver Pedido
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </div>
+</div>
+
+<!-- MODAL DEL CARRITO / PEDIDO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Tu Pedido</h2>
+      <button class="close-modal-btn" id="closeModalBtn">✕</button>
+    </div>
+    
+    <div class="cart-items-list" id="cartItemsList">
+      <!-- Ítems del carrito se inyectan dinámicamente -->
+    </div>
+
+    <!-- Formulario de datos -->
+    <div class="order-form">
+      <div class="form-group">
+        <label for="orderName">Nombre Completo</label>
+        <input type="text" id="orderName" class="form-control" placeholder="Ej. Juan Pérez" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="orderType">¿Dónde consumir?</label>
+          <select id="orderType" class="form-control">
+            <option value="mesa">Consumo en Mesa</option>
+            <option value="llevar">Para Llevar</option>
+            <option value="domicilio">Domicilio</option>
+          </select>
+        </div>
+        <div class="form-group" id="tableGroup">
+          <label for="orderTable">Mesa / Dirección</label>
+          <input type="text" id="orderTable" class="form-control" placeholder="Ej. Mesa 4 o Calle 10 #12-34">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="orderNotes">Notas o Alergias</label>
+        <textarea id="orderNotes" class="form-control" rows="2" placeholder="Ej. Sin azúcar / Cambiar leche por lactosa..."></textarea>
+      </div>
+    </div>
+
+    <button class="submit-order-btn" id="submitOrderBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-2.735c1.6.949 3.193 1.449 4.825 1.451 5.423 0 9.834-4.394 9.837-9.817.001-2.628-1.018-5.1-2.869-6.956-1.851-1.855-4.312-2.878-6.943-2.88-5.425 0-9.837 4.396-9.84 9.82-.001 1.73.473 3.42 1.371 4.911l-.994 3.634 3.714-.963zm11.751-7.854c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+      Enviar Pedido por WhatsApp
+    </button>
+  </div>
+</div>
+
+<!-- VENTANA EMERGENTE DE SIMULACIÓN DE WHATSAPP -->
+<div class="sim-popup" id="simPopup">
+  <div class="sim-header">
+    <div class="sim-wa-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12.008.01C5.397.01.06 5.348.06 11.89c0 2.097.546 4.142 1.587 5.946L.057 24l6.326-1.657a11.95 11.95 0 0 0 5.739 1.446c6.613 0 11.949-5.34 11.953-11.997.002-3.204-1.239-6.216-3.505-8.484A11.91 11.91 0 0 0 12.008.01zM12 21.84a9.839 9.839 0 0 1-5.012-1.367l-.36-.213-3.724.977.995-3.634-.234-.374A9.84 9.84 0 0 1 2.16 12C2.16 6.553 6.553 2.16 12 2.16c5.448 0 9.84 4.393 9.84 9.84 0 5.448-4.392 9.84-9.84 9.84z"/></svg>
+    </div>
+    <div class="sim-title">
+      <h4>Simulador de WhatsApp</h4>
+      <p>Vista previa del mensaje automatizado</p>
+    </div>
+  </div>
+  <p style="font-size: 12px; color: #555; margin-bottom: 12px;">En un sitio real, hacer clic en "Enviar" redirigirá al cliente directamente al WhatsApp del restaurante con el siguiente texto autocompletado:</p>
+  <div class="sim-bubble" id="simBubble">
+    <!-- Texto formateado del pedido -->
+  </div>
+  <div class="sim-actions">
+    <button class="sim-btn sim-btn-close" id="simCloseBtn">Modificar Pedido</button>
+    <button class="sim-btn sim-btn-ok" id="simSendBtn">Simular Envío</button>
+  </div>
+</div>
+
+<script>
+  // Estructura del carrito
+  let cart = [];
+
+  // Elementos DOM
+  const cartBar = document.getElementById('cartBar');
+  const cartCount = document.getElementById('cartCount');
+  const cartTotal = document.getElementById('cartTotal');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const cartItemsList = document.getElementById('cartItemsList');
+  const submitOrderBtn = document.getElementById('submitOrderBtn');
+  const orderName = document.getElementById('orderName');
+  const orderType = document.getElementById('orderType');
+  const orderTable = document.getElementById('orderTable');
+  const orderNotes = document.getElementById('orderNotes');
+  
+  const simPopup = document.getElementById('simPopup');
+  const simBubble = document.getElementById('simBubble');
+  const simCloseBtn = document.getElementById('simCloseBtn');
+  const simSendBtn = document.getElementById('simSendBtn');
+
+  // Navegación de categorías suave
+  document.getElementById('categoriesNav').addEventListener('click', (e) => {
+    if (e.target.classList.contains('category-btn')) {
+      document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      const targetId = e.target.getAttribute('data-sec');
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        window.scrollTo({
+          top: targetEl.offsetTop - 80,
+          behavior: 'smooth'
+        });
+      }
+    }
+  });
+
+  // Escuchar botones de agregar producto
+  document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const card = e.target.closest('.product-card');
+      const id = card.getAttribute('data-id');
+      const name = card.getAttribute('data-name');
+      const price = parseInt(card.getAttribute('data-price'));
+      
+      addToCart(id, name, price);
+      
+      // Retroalimentación visual en el botón
+      const originalText = btn.textContent;
+      btn.textContent = '✓ Agregado';
+      btn.style.backgroundColor = '#25D366';
+      btn.style.color = '#fff';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+      }, 1000);
+    });
+  });
+
+  // Funciones del carrito
+  function addToCart(id, name, price) {
+    const existing = cart.find(item => item.id === id);
+    if (existing) {
+      existing.qty++;
+    } else {
+      cart.push({ id, name, price, qty: 1 });
+    }
+    updateCartUI();
+  }
+
+  function updateCartUI() {
+    const totalCount = cart.reduce((acc, item) => acc + item.qty, 0);
+    const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    
+    cartCount.textContent = totalCount;
+    cartTotal.textContent = `$${totalPrice.toLocaleString('es-CO')}`;
+    
+    if (totalCount > 0) {
+      cartBar.classList.add('active');
+    } else {
+      cartBar.classList.remove('active');
+      modalOverlay.classList.remove('active');
+    }
+  }
+
+  // Abrir carrito
+  cartBar.addEventListener('click', () => {
+    renderCartModal();
+    modalOverlay.classList.add('active');
+  });
+
+  // Cerrar carrito
+  closeModalBtn.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
+  });
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.classList.remove('active');
+    }
+  });
+
+  // Cambiar tipo de entrega adapta el label del input
+  orderType.addEventListener('change', () => {
+    const val = orderType.value;
+    const label = document.querySelector('label[for="orderTable"]');
+    if (val === 'mesa') {
+      label.textContent = "Número de Mesa";
+      orderTable.placeholder = "Ej. Mesa 4";
+    } else if (val === 'llevar') {
+      label.textContent = "Nombre de Retiro (Opcional)";
+      orderTable.placeholder = "Ej. Pedido rápido";
+    } else {
+      label.textContent = "Dirección de Envío";
+      orderTable.placeholder = "Ej. Calle 10 #12-34, Apto 302";
+    }
+  });
+
+  // Renderizar la lista de productos del carrito
+  function renderCartModal() {
+    cartItemsList.innerHTML = '';
+    
+    cart.forEach(item => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'cart-item';
+      itemEl.innerHTML = `
+        <div class="cart-item-details">
+          <h4>${item.name}</h4>
+          <p>$${item.price.toLocaleString('es-CO')} c/u</p>
+        </div>
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="modifyQty('${item.id}', -1)">-</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="modifyQty('${item.id}', 1)">+</button>
+        </div>
+      `;
+      cartItemsList.appendChild(itemEl);
+    });
+  }
+
+  // Modificar cantidades desde el modal
+  window.modifyQty = function(id, change) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      item.qty += change;
+      if (item.qty <= 0) {
+        cart = cart.filter(i => i.id !== id);
+      }
+      updateCartUI();
+      renderCartModal();
+    }
+  };
+
+  // Enviar pedido - Abre simulación de WhatsApp
+  submitOrderBtn.addEventListener('click', () => {
+    if (!orderName.value.trim()) {
+      alert("Por favor, ingresa tu nombre para continuar.");
+      orderName.focus();
+      return;
+    }
+    
+    // Formatear texto del pedido estilo WhatsApp
+    const name = orderName.value.trim();
+    const type = orderType.value.toUpperCase();
+    const place = orderTable.value.trim() || 'No especificado';
+    const notes = orderNotes.value.trim() || 'Ninguna';
+    const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    
+    let msg = `*☕ ¡NUEVO PEDIDO - CAFÉ & AROMA!* ☕\n\n`;
+    msg += `*Cliente:* ${name}\n`;
+    msg += `*Tipo:* ${type}\n`;
+    msg += `*Mesa/Dirección:* ${place}\n`;
+    msg += `--------------------------------\n`;
+    
+    cart.forEach(item => {
+      const subtotal = item.price * item.qty;
+      msg += `• *${item.qty}x* ${item.name} _($${subtotal.toLocaleString('es-CO')})_\n`;
+    });
+    
+    msg += `--------------------------------\n`;
+    msg += `*TOTAL A PAGAR: $${totalPrice.toLocaleString('es-CO')}*\n\n`;
+    msg += `*Notas:* ${notes}\n\n`;
+    msg += `_Mensaje enviado automáticamente desde el Menú Digital._`;
+
+    simBubble.textContent = msg;
+    
+    // Ocultar modal del carrito y mostrar popup de WhatsApp
+    modalOverlay.classList.remove('active');
+    simPopup.classList.add('active');
+  });
+
+  // Acciones de Simulación de WhatsApp
+  simCloseBtn.addEventListener('click', () => {
+    simPopup.classList.remove('active');
+    modalOverlay.classList.add('active');
+  });
+
+  simSendBtn.addEventListener('click', () => {
+    alert("¡Simulación exitosa!\nEn una aplicación real en producción, esta acción abriría la aplicación de WhatsApp del cliente con tu número y el pedido autocompletado listo para enviar.");
+    
+    // Resetear carrito tras éxito
+    cart = [];
+    updateCartUI();
+    simPopup.classList.remove('active');
+    
+    // Limpiar formulario
+    orderName.value = '';
+    orderTable.value = '';
+    orderNotes.value = '';
+  });
+</script>
+</body>
+</html>

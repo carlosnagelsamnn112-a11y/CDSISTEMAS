@@ -169,6 +169,102 @@
     position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
     font-family:'Inter'; font-size:0.78rem; color:#6a6d78; text-align:center;
   }
+
+  /* BARRA DE PROGRESO DE PASOS */
+  .steps-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+  .step-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    position: relative;
+  }
+  .step-dot:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 60%;
+    width: 80%;
+    height: 1px;
+    background: rgba(255,255,255,0.12);
+  }
+  .step-dot.done:not(:last-child)::after {
+    background: var(--gold);
+  }
+  .step-dot-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: all 0.3s ease;
+    z-index: 1;
+  }
+  .step-dot.active .step-dot-circle {
+    border-color: var(--gold);
+    background: var(--gold);
+    color: var(--navy);
+    box-shadow: 0 0 8px rgba(201,162,39,0.5);
+  }
+  .step-dot.done .step-dot-circle {
+    border-color: var(--ok);
+    background: var(--ok);
+    color: #fff;
+  }
+  .step-dot-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .step-dot.active .step-dot-label {
+    color: var(--gold);
+  }
+  .step-dot.done .step-dot-label {
+    color: var(--ok);
+  }
+
+  /* TEXTO GUIA */
+  .guide-hint {
+    margin: 0 20px 4px;
+    padding: 8px 12px;
+    background: rgba(201,162,39,0.08);
+    border: 1px solid rgba(201,162,39,0.2);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: var(--gold);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* PULSO EN PRIMER CHIP */
+  @keyframes chipPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,162,39,0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(201,162,39,0); }
+  }
+  .pulse-hint {
+    animation: chipPulse 1.8s ease-in-out 3;
+  }
 </style>
 </head>
 <body>
@@ -177,6 +273,22 @@
   <div class="notch"></div>
   <div class="screen">
     <div class="status-bar"></div>
+
+    <!-- BARRA DE PASOS -->
+    <div class="steps-progress" id="stepsProgress">
+      <div class="step-dot active" id="sdot-1">
+        <div class="step-dot-circle">1</div>
+        <div class="step-dot-label">Servicio</div>
+      </div>
+      <div class="step-dot" id="sdot-2">
+        <div class="step-dot-circle">2</div>
+        <div class="step-dot-label">Barbero</div>
+      </div>
+      <div class="step-dot" id="sdot-3">
+        <div class="step-dot-circle">3</div>
+        <div class="step-dot-label">Horario</div>
+      </div>
+    </div>
 
     <!-- ===== PÁGINA: INICIO ===== -->
     <div class="page active" id="page-inicio">
@@ -194,6 +306,7 @@
         <div class="avatar-circle" id="next-avatar">K</div>
       </div>
 
+      <div class="guide-hint" id="guideHint">👆 Toca un servicio para comenzar</div>
       <div class="section-label"><h2>Servicios</h2></div>
       <div class="services-scroll" id="services-scroll"></div>
 
@@ -427,8 +540,66 @@ document.getElementById('profile-save-btn').addEventListener('click', ()=>{
   setTimeout(()=> toast.classList.remove('show'), 2200);
 });
 
+/* ==================== BARRA DE PROGRESO ==================== */
+function actualizarPasos() {
+  // Paso 1: siempre activo/done si hay servicio seleccionado
+  // Paso 2: activo/done si hay barbero elegido (siempre hay uno por defecto)
+  // Paso 3: activo/done si hay horario seleccionado
+  const s1 = document.getElementById('sdot-1');
+  const s2 = document.getElementById('sdot-2');
+  const s3 = document.getElementById('sdot-3');
+  const hint = document.getElementById('guideHint');
+
+  // Reset
+  [s1, s2, s3].forEach(s => s.classList.remove('active', 'done'));
+
+  if (state.slot) {
+    s1.classList.add('done');
+    s2.classList.add('done');
+    s3.classList.add('done');
+    hint.textContent = '✓ Listo — confirma tu turno abajo';
+    hint.style.color = 'var(--ok)';
+    hint.style.borderColor = 'rgba(62,146,104,0.3)';
+    hint.style.background = 'rgba(62,146,104,0.08)';
+  } else if (state.barber) {
+    s1.classList.add('done');
+    s2.classList.add('done');
+    s3.classList.add('active');
+    hint.textContent = '👆 Paso 3: elige un horario disponible';
+    hint.style.color = 'var(--gold)';
+    hint.style.borderColor = 'rgba(201,162,39,0.2)';
+    hint.style.background = 'rgba(201,162,39,0.08)';
+  } else if (state.service) {
+    s1.classList.add('done');
+    s2.classList.add('active');
+    hint.textContent = '👆 Paso 2: selecciona tu barbero';
+  } else {
+    s1.classList.add('active');
+    hint.textContent = '👆 Toca un servicio para comenzar';
+  }
+}
+
+/* Sobrescribir renderInicio para actualizar pasos */
+function renderInicioConPasos() {
+  renderServices(); renderBarbers(); renderDateTabs(); renderSlots(); renderBookBtn(); renderNextCard();
+  actualizarPasos();
+}
+
+// Aplicar pulso al primer chip tras renderizar
+function aplicarPulsoInicial() {
+  const firstChip = document.querySelector('.service-chip');
+  if (firstChip) firstChip.classList.add('pulse-hint');
+}
+
 /* ==================== INIT ==================== */
-renderInicio();
+renderInicioConPasos();
+aplicarPulsoInicial();
+
+// Re-hookear eventos para actualizar pasos
+document.getElementById('services-scroll').addEventListener('click', () => setTimeout(actualizarPasos, 50));
+document.getElementById('barber-list').addEventListener('click', () => setTimeout(actualizarPasos, 50));
+document.getElementById('date-tabs').addEventListener('click', () => setTimeout(actualizarPasos, 50));
+document.getElementById('slots').addEventListener('click', () => setTimeout(actualizarPasos, 50));
 </script>
 
 </body>

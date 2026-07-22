@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DentiSalud — Portal de Agendamiento de Citas</title>
+  <meta name="description" content="Ejemplo interactivo de portal para agendamiento de citas odontológicas y médicas con calendario y horarios en tiempo real.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0F52BA;
+      --primary-dark: #073B8C;
+      --primary-light: #EBF3FF;
+      --success: #10B981;
+      --dark: #1E293B;
+      --muted: #64748B;
+      --bg: #F8FAFC;
+      --white: #FFFFFF;
+      --line: #E2E8F0;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(15, 82, 186, 0.05);
+      --font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--dark);
+      font-family: var(--font-family);
+      line-height: 1.6;
+      padding-bottom: 50px;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; background: none; cursor: pointer; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header {
+      padding: 40px 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 30px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: var(--primary);
+      color: var(--white);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand p {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* DEMO NOTE */
+    .demo-bar {
+      background: #E0F2FE;
+      border: 1px solid #BAE6FD;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 30px;
+      font-size: 13px;
+      color: #0369A1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .demo-bar .badge {
+      background: var(--primary);
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* GRID PRINCIPAL */
+    .booking-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 800px) {
+      .booking-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* CARD PASOS */
+    .step-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary-dark);
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* SELECCIÓN ESPECIALISTAS */
+    .specialist-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .specialist-option {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .specialist-option:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .specialist-option.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(15, 82, 186, 0.15);
+    }
+
+    .spec-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #F1F5F9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      border: 2px solid var(--line);
+    }
+    .specialist-option.selected .spec-avatar {
+      border-color: var(--primary);
+    }
+    .spec-info h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+    }
+    .spec-info p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* CALENDARIO */
+    .calendar-container {
+      margin-top: 10px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+    .day-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 6px 0;
+    }
+    .day-btn {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      background: var(--bg);
+      border: 1px solid transparent;
+    }
+    .day-btn:not([disabled]):hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .day-btn.selected {
+      background: var(--primary) !important;
+      color: var(--white) !important;
+    }
+    .day-btn[disabled] {
+      color: #CBD5E1;
+      background: none;
+      cursor: not-allowed;
+    }
+
+    /* HORARIOS */
+    .hours-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .hour-btn {
+      padding: 10px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      background: var(--white);
+      transition: all 0.2s ease;
+    }
+    .hour-btn:hover:not([disabled]) {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .hour-btn.selected {
+      background: var(--primary);
+      color: var(--white);
+      border-color: var(--primary);
+    }
+    .hour-btn[disabled] {
+      color: #CBD5E1;
+      background: #F1F5F9;
+      cursor: not-allowed;
+    }
+
+    /* FORMULARIO DE PACIENTE */
+    .patient-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .form-control {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-family: var(--font-family);
+      font-size: 14px;
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      background: var(--white);
+    }
+
+    /* BOTÓN AGENDAR */
+    .btn-submit {
+      width: 100%;
+      background: var(--primary);
+      color: var(--white);
+      padding: 14px;
+      border-radius: 25px;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(15, 82, 186, 0.2);
+      transition: background 0.2s ease, transform 0.15s ease;
+      margin-top: 10px;
+    }
+    .btn-submit:hover {
+      background: var(--primary-dark);
+    }
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* MODAL TICKET CONFIRMACIÓN */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* TICKET MÉDICO */
+    .ticket {
+      background: var(--white);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 420px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--line);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.active .ticket {
+      transform: scale(1);
+    }
+
+    .ticket-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 24px;
+      text-align: center;
+      position: relative;
+    }
+    .ticket-header-success {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      color: var(--white);
+    }
+    .ticket-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .ticket-header p {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .ticket-body {
+      padding: 24px;
+      position: relative;
+    }
+    
+    /* Separador dentado clásico de ticket */
+    .ticket-body::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 100%;
+      height: 20px;
+      background-image: radial-gradient(circle, var(--white) 6px, transparent 6px);
+      background-size: 16px 20px;
+      background-position: top center;
+    }
+
+    .ticket-info-group {
+      margin-bottom: 16px;
+    }
+    .ticket-info-group label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .ticket-info-group p {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .ticket-bar-code {
+      height: 60px;
+      background: repeating-linear-gradient(90deg, #111, #111 2px, #fff 2px, #fff 8px, #111 8px, #111 12px);
+      margin: 24px 0 10px;
+      border-radius: 4px;
+      opacity: 0.85;
+    }
+    .ticket-code-str {
+      text-align: center;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ticket-actions {
+      padding: 0 24px 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .ticket-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .ticket-btn-close {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--dark);
+    }
+    .ticket-btn-close:hover {
+      background: var(--primary-light);
+    }
+    .ticket-btn-save {
+      background: var(--primary);
+      color: var(--white);
+    }
+    .ticket-btn-save:hover {
+      background: var(--primary-dark);
+    }
+
+    /* VOLVER AL PORTAFOLIO */
+    .back-to-portfolio {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-top: 20px;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      background: var(--primary-light);
+    }
+    .back-to-portfolio:hover {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    /* GUIA DE PASOS */
+    .steps-guide {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    .guide-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      position: relative;
+    }
+    .guide-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -4px;
+      color: var(--line);
+      font-size: 16px;
+      font-weight: 300;
+    }
+    .guide-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .guide-step-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .guide-step-text strong {
+      display: block;
+      font-size: 13px;
+      color: var(--dark);
+    }
+    @media (max-width: 640px) {
+      .steps-guide { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .guide-step:not(:last-child)::after { display: none; }
+    }
+
+    /* ETIQUETA DISPONIBLE */
+    .available-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* TOOLTIP CALENDARIO */
+    .calendar-tip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-light);
+      border: 1px solid rgba(15, 82, 186, 0.15);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      animation: calTipPulse 2s ease-in-out 3;
+    }
+    @keyframes calTipPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <a href="../index.html" class="back-to-portfolio">
+    ← Volver al Catálogo
+  </a>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div>
+        <h1>DentiSalud</h1>
+        <p>Centro Odontológico</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- NOTA DE DEMOSTRACIÓN -->
+  <div class="demo-bar">
+    <span class="badge">DEMO DE CD SISTEMAS</span>
+    <span>Interactúa con la reserva: elige especialista, fecha y hora para simular tu ticket de cita.</span>
+  </div>
+
+  <!-- GRID DE AGENDAMIENTO -->
+
+  <!-- GUÍA DE 3 PASOS -->
+  <div class="steps-guide">
+    <div class="guide-step">
+      <div class="guide-step-num">1</div>
+      <div class="guide-step-text">
+        <strong>Elige especialista</strong>
+        Odontología o especialidad
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-step-num">2</div>
+      <div class="guide-step-text">
+        <strong>Selecciona la fecha</strong>
+        Toca un día en el calendario
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-step-num">3</div>
+      <div class="guide-step-text">
+        <strong>Confirma el horario</strong>
+        Elige la hora y recibe tu ticket
+      </div>
+    </div>
+  </div>
+
+  <main class="booking-grid">
+    
+    <!-- LADO IZQUIERDO: SELECCIONES -->
+    <div>
+      
+      <!-- PASO 1: ESPECIALISTA -->
+      <section class="step-card">
+        <h2 class="step-title">
+          <span class="step-num">1</span>
+          Selecciona Especialista
+        </h2>
+        <div class="specialist-list" id="specialistList">
+          
+          <div class="specialist-option selected" data-id="e1" data-name="Dra. Carolina Gómez" data-spec="Odontopediatría">
+            <div class="spec-avatar">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="spec-info">
+              <h4>Dra. Carolina Gómez</h4>
+              <p>Odontopediatría (Cuidado infantil)</p>
+            </div>
+            <span class="available-badge">✓ Disponible hoy</span>
+          </div>
+
+          <div class="specialist-option" data-id="e2" data-name="Dr. Andrés Restrepo" data-spec="Ortodoncia">
+            <div class="spec-avatar">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="spec-info">
+              <h4>Dr. Andrés Restrepo</h4>
+              <p>Ortodoncia (Alineación y brackets)</p>
+            </div>
+          </div>
+
+          <div class="specialist-option" data-id="e3" data-name="Dra. Sofía Martínez" data-spec="Odontología General">
+            <div class="spec-avatar">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="spec-info">
+              <h4>Dra. Sofía Martínez</h4>
+              <p>Odontología General y Estética</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- PASO 2: CALENDARIO -->
+      <section class="step-card">
+        <h2 class="step-title">
+          <span class="step-num">2</span>
+          Elige Fecha de Consulta
+        </h2>
+        <div class="calendar-tip">
+          👆 Toca cualquier día disponible para ver los horarios
+        </div>
+        <div class="calendar-container">
+          <div class="calendar-header" id="calendarMonthYear">
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <div class="day-name">LU</div>
+            <div class="day-name">MA</div>
+            <div class="day-name">MI</div>
+            <div class="day-name">JU</div>
+            <div class="day-name">VI</div>
+            <div class="day-name">SÁ</div>
+            <div class="day-name">DO</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- LADO DERECHO: HORAS Y FORMULARIO -->
+    <div>
+      
+      <!-- PASO 3: HORARIOS -->
+      <section class="step-card">
+        <h2 class="step-title">
+          <span class="step-num">3</span>
+          Selecciona Horario Disponible
+        </h2>
+        <div class="hours-grid" id="hoursGrid">
+          <button class="hour-btn selected" data-time="08:00 AM">08:00 AM</button>
+          <button class="hour-btn" data-time="09:30 AM">09:30 AM</button>
+          <button class="hour-btn" data-time="11:00 AM">11:00 AM</button>
+          <button class="hour-btn" data-time="02:00 PM" disabled>02:00 PM</button> <!-- Ocupado -->
+          <button class="hour-btn" data-time="03:30 PM">03:30 PM</button>
+          <button class="hour-btn" data-time="05:00 PM">05:00 PM</button>
+        </div>
+      </section>
+
+      <!-- PASO 4: FORMULARIO -->
+      <section class="step-card">
+        <h2 class="step-title">
+          <span class="step-num">4</span>
+          Datos de Contacto
+        </h2>
+        <form class="patient-form" id="bookingForm" onsubmit="event.preventDefault(); triggerSubmit();">
+          <div class="form-group">
+            <label for="pName">Nombre Completo</label>
+            <input type="text" id="pName" class="form-control" placeholder="Ej. Carlos Alarcón" required>
+          </div>
+          <div class="form-group">
+            <label for="pPhone">Teléfono Móvil</label>
+            <input type="tel" id="pPhone" class="form-control" placeholder="Ej. 310 456 7890" required>
+          </div>
+          <div class="form-group">
+            <label for="pReason">Motivo de la Cita</label>
+            <select id="pReason" class="form-control">
+              <option value="Valoración Inicial">Valoración / Primera Cita</option>
+              <option value="Limpieza Dental">Limpieza Dental General</option>
+              <option value="Dolor / Emergencia">Dolor de Muela / Emergencia</option>
+              <option value="Control de Ortodoncia">Control mensual de Ortodoncia</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-submit">Confirmar Cita Médica</button>
+        </form>
+      </section>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- MODAL TICKET -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="ticket">
+    <div class="ticket-header">
+      <div class="ticket-header-success">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>¡Reserva Confirmada!</h3>
+      <p>Guarda el ticket para tu control</p>
+    </div>
+    
+    <div class="ticket-body">
+      <div class="ticket-info-group">
+        <label>PACIENTE</label>
+        <p id="tPatientName">Carlos Alarcón</p>
+      </div>
+      <div class="ticket-info-group">
+        <label>ESPECIALISTA</label>
+        <p id="tSpecName">Dra. Carolina Gómez (Odontopediatría)</p>
+      </div>
+      <div class="ticket-info-group">
+        <label>FECHA Y HORA</label>
+        <p id="tDateTime">Lunes, 13 de Julio de 2026 — 08:00 AM</p>
+      </div>
+      <div class="ticket-info-group">
+        <label>MOTIVO</label>
+        <p id="tReason">Valoración Inicial</p>
+      </div>
+
+      <div class="ticket-bar-code"></div>
+      <div class="ticket-code-str" id="tCode">DS-76921-A</div>
+    </div>
+
+    <div class="ticket-actions">
+      <button class="ticket-btn ticket-btn-close" id="closeTicketBtn">Cerrar</button>
+      <button class="ticket-btn ticket-btn-save" id="saveTicketBtn">Descargar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Estado local del agendamiento
+  let selectedSpecialist = {
+    name: "Dra. Carolina Gómez",
+    spec: "Odontopediatría"
+  };
+  let selectedDay = 13;
+  let selectedTime = "08:00 AM";
+  let selectedMonth = 6; // Julio (0-indexed)
+  let selectedYear = 2026;
+
+  const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+  // Generar calendario dinámicamente
+  function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const header = document.getElementById('calendarMonthYear');
+
+    // Limpiar días anteriores (mantener los 7 day-name headers)
+    const existingDays = grid.querySelectorAll('.day-btn');
+    existingDays.forEach(btn => btn.remove());
+
+    header.textContent = `${monthNames[selectedMonth]} ${selectedYear}`;
+
+    const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const startDay = firstDay === 0 ? 6 : firstDay - 1; // Ajustar para que Lunes=0
+
+    // Agregar días vacíos al inicio
+    for (let i = 0; i < startDay; i++) {
+      const empty = document.createElement('button');
+      empty.className = 'day-btn';
+      empty.disabled = true;
+      grid.appendChild(empty);
+    }
+
+    // Agregar días del mes
+    for (let d = 1; d <= daysInMonth; d++) {
+      const btn = document.createElement('button');
+      btn.className = 'day-btn';
+      btn.setAttribute('data-day', d);
+      btn.textContent = d;
+
+      const dayOfWeek = new Date(selectedYear, selectedMonth, d).getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        btn.disabled = true;
+      }
+      if (d === selectedDay) {
+        btn.classList.add('selected');
+      }
+      grid.appendChild(btn);
+    }
+  }
+
+  renderCalendar();
+
+  // Especialistas
+  document.getElementById('specialistList').addEventListener('click', (e) => {
+    const card = e.target.closest('.specialist-option');
+    if (card) {
+      document.querySelectorAll('.specialist-option').forEach(opt => opt.classList.remove('selected'));
+      card.classList.add('selected');
+      
+      selectedSpecialist.name = card.getAttribute('data-name');
+      selectedSpecialist.spec = card.getAttribute('data-spec');
+      
+      randomizeHoursAvailability();
+    }
+  });
+
+  // Calendario
+  document.getElementById('calendarGrid').addEventListener('click', (e) => {
+    if (e.target.classList.contains('day-btn') && !e.target.disabled) {
+      document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('selected'));
+      e.target.classList.add('selected');
+      
+      selectedDay = parseInt(e.target.getAttribute('data-day'));
+      
+      randomizeHoursAvailability();
+    }
+  });
+
+  // Selección de Horas
+  document.getElementById('hoursGrid').addEventListener('click', (e) => {
+    if (e.target.classList.contains('hour-btn') && !e.target.disabled) {
+      document.querySelectorAll('.hour-btn').forEach(btn => btn.classList.remove('selected'));
+      e.target.classList.add('selected');
+      
+      selectedTime = e.target.getAttribute('data-time');
+    }
+  });
+
+  function randomizeHoursAvailability() {
+    const buttons = document.querySelectorAll('.hour-btn');
+    buttons.forEach((btn, index) => {
+      btn.classList.remove('selected');
+      btn.disabled = false;
+      
+      if (index !== 0 && Math.random() < 0.3) {
+        btn.disabled = true;
+      }
+    });
+    
+    const firstAvailable = document.querySelector('.hour-btn:not([disabled])');
+    if (firstAvailable) {
+      firstAvailable.classList.add('selected');
+      selectedTime = firstAvailable.getAttribute('data-time');
+    }
+  }
+
+  function triggerSubmit() {
+    const patientName = document.getElementById('pName').value.trim();
+    const phone = document.getElementById('pPhone').value.trim();
+    const reason = document.getElementById('pReason').value;
+
+    const codeNum = Math.floor(10000 + Math.random() * 90000);
+    const codeLetter = ["A", "B", "C", "H"][Math.floor(Math.random() * 4)];
+    const ticketCode = `DS-${codeNum}-${codeLetter}`;
+
+    const selectedDate = new Date(selectedYear, selectedMonth, selectedDay);
+    const dayName = dayNames[selectedDate.getDay()];
+
+    document.getElementById('tPatientName').textContent = patientName;
+    document.getElementById('tSpecName').textContent = `${selectedSpecialist.name} (${selectedSpecialist.spec})`;
+    document.getElementById('tDateTime').textContent = `${dayName}, ${selectedDay} de ${monthNames[selectedMonth]} de ${selectedYear} — ${selectedTime}`;
+    document.getElementById('tReason').textContent = reason;
+    document.getElementById('tCode').textContent = ticketCode;
+
+    document.getElementById('ticketModal').classList.add('active');
+  }
+
+  document.getElementById('closeTicketBtn').addEventListener('click', () => {
+    document.getElementById('ticketModal').classList.remove('active');
+    document.getElementById('bookingForm').reset();
+  });
+
+  document.getElementById('saveTicketBtn').addEventListener('click', () => {
+    alert("¡Simulación de Descarga!\nEl ticket se ha guardado en tu dispositivo móvil en formato PDF/Imagen de manera exitosa.");
+    document.getElementById('ticketModal').classList.remove('active');
+    document.getElementById('bookingForm').reset();
+  });
+</script>
+</body>
+</html>

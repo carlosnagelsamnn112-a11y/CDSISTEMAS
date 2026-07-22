@@ -30,7 +30,6 @@ if (diagram && specSheet) {
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
     
-    // Parámetros de desplazamiento suave y rotación sutil
     const moveX = (x / rect.width) * 16;
     const moveY = (y / rect.height) * 16;
     const rotate = -0.5 + (x / rect.width) * 2;
@@ -46,71 +45,4 @@ if (diagram && specSheet) {
 
   diagram.addEventListener('mousemove', handleMouseMove);
   diagram.addEventListener('mouseleave', handleMouseLeave);
-}
-
-// Popover del botón de correo (mostrar dirección + copiar al portapapeles)
-const mailBtn = document.getElementById('mailFloatBtn');
-const mailPopover = document.getElementById('mailPopover');
-const mailCopyBtn = document.getElementById('mailCopyBtn');
-const mailAddress = document.getElementById('mailPopoverAddress').textContent.trim();
-
-function openMailPopover() {
-  mailPopover.hidden = false;
-  mailBtn.setAttribute('aria-expanded', 'true');
-}
-
-function closeMailPopover() {
-  mailPopover.hidden = true;
-  mailBtn.setAttribute('aria-expanded', 'false');
-}
-
-if (mailBtn && mailPopover && mailCopyBtn) {
-  mailBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (mailPopover.hidden) {
-      openMailPopover();
-    } else {
-      closeMailPopover();
-    }
-  });
-
-  mailCopyBtn.addEventListener('click', async () => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(mailAddress);
-      } else {
-        // Método alterno para navegadores sin soporte de Clipboard API
-        const tempInput = document.createElement('textarea');
-        tempInput.value = mailAddress;
-        tempInput.style.position = 'fixed';
-        tempInput.style.opacity = '0';
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-      }
-      const original = mailCopyBtn.textContent;
-      mailCopyBtn.textContent = '¡Copiado!';
-      mailCopyBtn.classList.add('copied');
-      setTimeout(() => {
-        mailCopyBtn.textContent = original;
-        mailCopyBtn.classList.remove('copied');
-      }, 1800);
-    } catch (err) {
-      mailCopyBtn.textContent = 'Error al copiar';
-    }
-  });
-
-  // Cerrar el popover al hacer click afuera o al presionar Escape
-  document.addEventListener('click', (e) => {
-    if (!mailPopover.hidden && !mailPopover.contains(e.target) && e.target !== mailBtn) {
-      closeMailPopover();
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !mailPopover.hidden) {
-      closeMailPopover();
-      mailBtn.focus();
-    }
-  });
 }

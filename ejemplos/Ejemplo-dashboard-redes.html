@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SocialMetrics — Dashboard de Redes Sociales</title>
+  <link rel="icon" href="../assets/logo.png">
+  <link rel="stylesheet" href="shared.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ---------- Layout ---------- */
+    .sm-app { display: flex; min-height: 100vh; }
+    .sm-topbar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--cd-bg-panel);
+      border-bottom: 1px solid var(--cd-line);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .sm-topbar-title {
+      font-family: var(--cd-font-display);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* ---------- Views ---------- */
+    .sm-view { display: none; }
+    .sm-view.active { display: block; }
+
+    /* ---------- KPI Grid ---------- */
+    .sm-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 1024px) {
+      .sm-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .sm-kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- Charts ---------- */
+    .sm-chart-container {
+      background: var(--cd-bg-panel);
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .sm-chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .sm-chart-svg { width: 100%; height: auto; }
+
+    /* ---------- Platform Cards ---------- */
+    .sm-platform-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .sm-platform-grid { grid-template-columns: 1fr; }
+    }
+    .sm-platform-card {
+      background: var(--cd-bg-panel);
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius);
+      padding: 20px;
+    }
+    .sm-platform-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .sm-platform-icon svg { width: 22px; height: 22px; }
+    .sm-platform-icon.ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+    .sm-platform-icon.fb { background: #1877F2; }
+    .sm-platform-icon.tt { background: #000; position: relative; overflow: hidden; }
+    .sm-platform-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .sm-platform-followers {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    /* ---------- Post Cards ---------- */
+    .sm-posts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .sm-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sm-filter-btn {
+      padding: 6px 14px;
+      font-family: var(--cd-font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border-radius: 20px;
+      border: 1px solid var(--cd-line);
+      background: none;
+      color: var(--cd-ink-soft);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sm-filter-btn:hover { border-color: var(--cd-line-strong); color: var(--cd-ink); }
+    .sm-filter-btn.active {
+      background: var(--cd-ink);
+      color: var(--cd-bg);
+      border-color: var(--cd-ink);
+    }
+    .sm-posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .sm-post-card {
+      background: var(--cd-bg-panel);
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius);
+      overflow: hidden;
+      transition: all var(--cd-transition);
+    }
+    .sm-post-card:hover {
+      border-color: var(--cd-line-strong);
+      transform: translateY(-2px);
+      box-shadow: var(--cd-shadow);
+    }
+    .sm-post-image {
+      height: 160px;
+      background: var(--cd-bg-panel-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cd-ink-muted);
+      font-size: 12px;
+      position: relative;
+    }
+    .sm-post-image svg { width: 40px; height: 40px; opacity: 0.3; }
+    .sm-post-platform-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sm-post-platform-badge svg { width: 14px; height: 14px; opacity: 1; }
+    .sm-post-body { padding: 16px; }
+    .sm-post-text {
+      font-size: 13px;
+      color: var(--cd-ink-soft);
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .sm-post-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--cd-line);
+    }
+    .sm-post-date {
+      font-size: 11px;
+      color: var(--cd-ink-muted);
+      font-family: var(--cd-font-display);
+    }
+    .sm-post-metrics { display: flex; gap: 12px; }
+    .sm-post-metric {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--cd-ink-soft);
+    }
+    .sm-post-metric svg { width: 14px; height: 14px; opacity: 0.5; }
+
+    /* ---------- Calendar ---------- */
+    .sm-cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sm-cal-nav { display: flex; align-items: center; gap: 12px; }
+    .sm-cal-nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--cd-line);
+      background: none;
+      color: var(--cd-ink-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sm-cal-nav-btn:hover { border-color: var(--cd-ink); color: var(--cd-ink); }
+    .sm-cal-month {
+      font-family: var(--cd-font-display);
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .sm-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .sm-cal-dayname {
+      padding: 8px 4px;
+      text-align: center;
+      font-family: var(--cd-font-display);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cd-ink-muted);
+    }
+    .sm-cal-day {
+      aspect-ratio: 1;
+      padding: 6px;
+      background: var(--cd-bg-panel);
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius-sm);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-height: 60px;
+    }
+    .sm-cal-day:hover { border-color: var(--cd-line-strong); }
+    .sm-cal-day.today { border-color: var(--cd-ink); }
+    .sm-cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+    .sm-cal-day.other-month { opacity: 0.3; }
+    .sm-cal-day-num { font-weight: 600; font-size: 12px; }
+    .sm-cal-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+    .sm-cal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .sm-cal-dot.ig { background: #d6249f; }
+    .sm-cal-dot.fb { background: #1877F2; }
+    .sm-cal-dot.tt { background: #fff; border: 1px solid #333; }
+
+    /* ---------- Metrics View ---------- */
+    .sm-metrics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .sm-bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 200px;
+      padding: 16px 0;
+    }
+    .sm-bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .sm-bar {
+      width: 100%;
+      max-width: 40px;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.5s ease;
+      min-height: 4px;
+    }
+    .sm-bar-label {
+      font-size: 10px;
+      color: var(--cd-ink-muted);
+      font-family: var(--cd-font-display);
+      text-align: center;
+    }
+    .sm-bar-value {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--cd-font-display);
+      color: var(--cd-ink-soft);
+    }
+
+    .sm-times-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .sm-time-slot {
+      padding: 12px;
+      background: var(--cd-bg);
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius-sm);
+      text-align: center;
+    }
+    .sm-time-slot.best { border-color: var(--cd-accent); background: rgba(37, 211, 102, 0.05); }
+    .sm-time-slot-time {
+      font-family: var(--cd-font-display);
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sm-time-slot-score {
+      font-size: 11px;
+      color: var(--cd-ink-soft);
+    }
+
+    /* ---------- Sidebar footer ---------- */
+    .sm-sidebar-footer {
+      padding: 16px 20px 0;
+      border-top: 1px solid var(--cd-line);
+      margin-top: auto;
+    }
+
+    /* ---------- Section titles ---------- */
+    .sm-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .sm-section-subtitle {
+      font-size: 13px;
+      color: var(--cd-ink-soft);
+      margin-bottom: 8px;
+    }
+
+    /* ---------- Two-col layout ---------- */
+    .sm-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .sm-two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- Responsive main ---------- */
+    @media (max-width: 1024px) {
+      .sm-topbar { display: flex; }
+      .cd-main-content { margin-left: 0; padding-top: 0; }
+      .cd-main-content > .cd-wrap { padding-top: 24px; }
+    }
+
+    /* ---------- Modal form ---------- */
+    .sm-modal-field { margin-bottom: 16px; }
+    .sm-modal-field:last-child { margin-bottom: 0; }
+    .sm-platform-selector {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .sm-platform-option {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius-sm);
+      background: none;
+      color: var(--cd-ink-soft);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .sm-platform-option:hover { border-color: var(--cd-line-strong); }
+    .sm-platform-option.selected {
+      border-color: var(--cd-ink);
+      color: var(--cd-ink);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .sm-upload-area {
+      border: 2px dashed var(--cd-line);
+      border-radius: var(--cd-radius);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sm-upload-area:hover { border-color: var(--cd-line-strong); }
+    .sm-upload-area svg { width: 32px; height: 32px; color: var(--cd-ink-muted); margin-bottom: 8px; }
+    .sm-upload-text { font-size: 12px; color: var(--cd-ink-muted); }
+    .sm-upload-text strong { color: var(--cd-ink-soft); }
+
+    /* ---------- Image preview ---------- */
+    .sm-image-preview {
+      width: 100%;
+      height: 120px;
+      background: var(--cd-bg-panel-soft);
+      border-radius: var(--cd-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cd-accent);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* ---------- Day detail popup ---------- */
+    .sm-day-detail {
+      background: var(--cd-bg-elevated);
+      border: 1px solid var(--cd-line-strong);
+      border-radius: var(--cd-radius);
+      padding: 16px;
+      margin-top: 16px;
+    }
+    .sm-day-detail-title {
+      font-family: var(--cd-font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--cd-ink-soft);
+      margin-bottom: 12px;
+    }
+    .sm-scheduled-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--cd-line);
+      border-radius: var(--cd-radius-sm);
+      margin-bottom: 8px;
+    }
+    .sm-scheduled-item:last-child { margin-bottom: 0; }
+    .sm-scheduled-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sm-scheduled-info { flex: 1; min-width: 0; }
+    .sm-scheduled-time {
+      font-family: var(--cd-font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cd-ink-soft);
+    }
+    .sm-scheduled-text {
+      font-size: 12px;
+      color: var(--cd-ink-soft);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sm-scheduled-delete {
+      background: none;
+      border: none;
+      color: var(--cd-ink-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .sm-scheduled-delete:hover { color: var(--cd-danger); }
+    .sm-scheduled-delete svg { width: 14px; height: 14px; }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="cd-skip-link">Saltar al contenido principal</a>
+
+  <div class="cd-toast-container" id="toast-container" aria-live="polite"></div>
+
+  <div class="sm-app">
+    <!-- ========== Sidebar ========== -->
+    <aside class="cd-sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="cd-sidebar-brand">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+          <rect width="28" height="28" rx="6" fill="#25D366"/>
+          <path d="M7 14C7 10.134 10.134 7 14 7C17.866 7 21 10.134 21 14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 14C10 11.791 11.791 10 14 10C16.209 10 18 11.791 18 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="1.5" fill="white"/>
+          <path d="M14 16V21" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>SocialMetrics</span>
+      </div>
+      <nav class="cd-sidebar-nav" role="navigation">
+        <button class="cd-sidebar-item active" data-view="dashboard" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </button>
+        <button class="cd-sidebar-item" data-view="posts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          Posts
+        </button>
+        <button class="cd-sidebar-item" data-view="programador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Programador
+        </button>
+        <button class="cd-sidebar-item" data-view="metricas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Métricas
+        </button>
+      </nav>
+      <div class="sm-sidebar-footer">
+        <a href="../index.html" class="cd-sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          Volver al catálogo
+        </a>
+      </div>
+    </aside>
+
+    <!-- ========== Main Content ========== -->
+    <main class="cd-main-content" id="main-content" role="main">
+      <!-- Topbar (mobile) -->
+      <div class="sm-topbar">
+        <button class="cd-hamburger" id="hamburger-btn" aria-label="Abrir menú de navegación" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="sm-topbar-title" id="topbar-title">Dashboard</span>
+        <div style="width:40px"></div>
+      </div>
+
+      <div class="cd-wrap" style="padding-top:24px; padding-bottom:48px;">
+
+        <!-- ===== Dashboard View ===== -->
+        <section class="sm-view active" id="view-dashboard" aria-label="Dashboard">
+          <h1 class="cd-title" style="margin-bottom:4px;">Dashboard</h1>
+          <p class="cd-text" style="margin-bottom:24px;">Resumen general de tus redes sociales.</p>
+
+          <div class="sm-kpi-grid" id="kpi-grid" aria-live="polite"></div>
+
+          <div class="sm-two-col">
+            <div class="sm-chart-container">
+              <div class="sm-chart-header">
+                <div>
+                  <div class="cd-label">Crecimiento de seguidores</div>
+                  <div class="cd-subtitle" style="margin-top:4px;">Últimos 6 meses</div>
+                </div>
+                <span class="cd-badge cd-badge-success"><span class="cd-badge-dot"></span> +12.4%</span>
+              </div>
+              <svg id="follower-chart" class="sm-chart-svg" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet" aria-label="Gráfico de crecimiento de seguidores" role="img"></svg>
+            </div>
+            <div>
+              <div class="cd-label" style="margin-bottom:12px;">Plataformas</div>
+              <div id="platform-breakdown" class="cd-flex-col cd-gap-md"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Posts View ===== -->
+        <section class="sm-view" id="view-posts" aria-label="Posts">
+          <h1 class="cd-title" style="margin-bottom:4px;">Posts</h1>
+          <p class="cd-text" style="margin-bottom:20px;">Publicaciones recientes en todas las plataformas.</p>
+          <div class="sm-posts-header">
+            <div class="sm-filters" role="group" aria-label="Filtrar por plataforma">
+              <button class="sm-filter-btn active" data-filter="all">Todas</button>
+              <button class="sm-filter-btn" data-filter="instagram">Instagram</button>
+              <button class="sm-filter-btn" data-filter="facebook">Facebook</button>
+              <button class="sm-filter-btn" data-filter="tiktok">TikTok</button>
+            </div>
+            <div class="sm-filters">
+              <span class="cd-label" style="display:flex;align-items:center;gap:6px;">Ordenar:</span>
+              <button class="sm-filter-btn active" data-sort="engagement">Engagement</button>
+              <button class="sm-filter-btn" data-sort="date">Fecha</button>
+            </div>
+          </div>
+          <div class="sm-posts-grid" id="posts-grid" aria-live="polite"></div>
+        </section>
+
+        <!-- ===== Programador View ===== -->
+        <section class="sm-view" id="view-programador" aria-label="Programador de contenido">
+          <div class="sm-cal-header">
+            <div>
+              <h1 class="cd-title" style="margin-bottom:4px;">Programador</h1>
+              <p class="cd-text">Planifica tus publicaciones.</p>
+            </div>
+            <button class="cd-btn cd-btn-primary" id="btn-new-post" aria-label="Crear nuevo post programado">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuevo Post
+            </button>
+          </div>
+          <div class="sm-cal-nav">
+            <button class="sm-cal-nav-btn" id="cal-prev" aria-label="Mes anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="sm-cal-month" id="cal-month-label"></span>
+            <button class="sm-cal-nav-btn" id="cal-next" aria-label="Mes siguiente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div style="height:12px"></div>
+          <div class="sm-cal-grid" id="cal-grid" role="grid" aria-label="Calendario de publicaciones"></div>
+          <div id="day-detail"></div>
+        </section>
+
+        <!-- ===== Métricas View ===== -->
+        <section class="sm-view" id="view-metricas" aria-label="Métricas detalladas">
+          <h1 class="cd-title" style="margin-bottom:4px;">Métricas</h1>
+          <p class="cd-text" style="margin-bottom:24px;">Análisis detallado por plataforma.</p>
+
+          <div class="sm-two-col">
+            <div class="sm-chart-container">
+              <div class="cd-label" style="margin-bottom:16px;">Engagement por plataforma</div>
+              <div class="sm-bar-chart" id="engagement-chart" aria-label="Gráfico de engagement por plataforma"></div>
+            </div>
+            <div class="sm-chart-container">
+              <div class="cd-label" style="margin-bottom:16px;">Mejores horarios para publicar</div>
+              <div class="sm-times-grid" id="best-times" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="sm-chart-container">
+            <div class="cd-label" style="margin-bottom:16px;">Top posts por rendimiento</div>
+            <div class="cd-table-wrap">
+              <table class="cd-table" id="top-posts-table">
+                <thead>
+                  <tr>
+                    <th>Plataforma</th>
+                    <th>Contenido</th>
+                    <th>Likes</th>
+                    <th>Comentarios</th>
+                    <th>Compartidos</th>
+                    <th>Engagement</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========== Modal: Nuevo Post ========== -->
+  <div class="cd-modal-overlay" id="post-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="cd-modal">
+      <div class="cd-modal-header">
+        <h2 class="cd-subtitle" id="modal-title">Nuevo Post Programado</h2>
+        <button class="cd-modal-close" id="modal-close" aria-label="Cerrar diálogo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="cd-modal-body">
+        <div class="sm-modal-field">
+          <label class="cd-label-form" for="modal-platform">Plataforma</label>
+          <div class="sm-platform-selector" id="modal-platform">
+            <button class="sm-platform-option selected" data-platform="instagram">Instagram</button>
+            <button class="sm-platform-option" data-platform="facebook">Facebook</button>
+            <button class="sm-platform-option" data-platform="tiktok">TikTok</button>
+          </div>
+        </div>
+        <div class="sm-modal-field">
+          <label class="cd-label-form" for="modal-content">Contenido</label>
+          <textarea class="cd-input" id="modal-content" rows="4" placeholder="Escribe el contenido de tu post..."></textarea>
+        </div>
+        <div class="sm-modal-field" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="cd-label-form" for="modal-date">Fecha</label>
+            <input type="date" class="cd-input" id="modal-date">
+          </div>
+          <div>
+            <label class="cd-label-form" for="modal-time">Hora</label>
+            <input type="time" class="cd-input" id="modal-time">
+          </div>
+        </div>
+        <div class="sm-modal-field">
+          <label class="cd-label-form">Imagen</label>
+          <div class="sm-upload-area" id="upload-area" role="button" tabindex="0" aria-label="Subir imagen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <div class="sm-upload-text">Arrastra una imagen o <strong>haz clic para subir</strong></div>
+          </div>
+          <div class="sm-image-preview" id="image-preview" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="cd-modal-footer">
+        <button class="cd-btn cd-btn-outline" id="modal-cancel">Cancelar</button>
+        <button class="cd-btn cd-btn-primary" id="modal-save">Programar Post</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    /* ========================================
+       DATA
+    ======================================== */
+    const PLATFORM_COLORS = {
+      instagram: '#d6249f',
+      facebook: '#1877F2',
+      tiktok: '#ffffff'
+    };
+
+    const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const DAY_NAMES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+    const DEFAULT_POSTS = [
+      { id: 1, platform: 'instagram', text: 'Descubre los secretos del marketing digital que nadie te cuenta. Guarda este post para después. 🚀', image: true, likes: 1243, comments: 89, shares: 156, date: '2026-07-20' },
+      { id: 2, platform: 'facebook', text: 'Nuestro nuevo curso de automatización social media ya está disponible. Inscríbete antes de que se agoten los cupos.', image: true, likes: 567, comments: 45, shares: 234, date: '2026-07-19' },
+      { id: 3, platform: 'tiktok', text: 'POV: cuando descubres que puedes programar todos tus posts desde un solo lugar 😱 #MarketingTip #SocialMedia', image: true, likes: 3421, comments: 234, shares: 567, date: '2026-07-18' },
+      { id: 4, platform: 'instagram', text: 'Estudio de caso: cómo incrementamos el engagement un 340% en 30 días con estrategia de contenido.', image: true, likes: 892, comments: 67, shares: 123, date: '2026-07-17' },
+      { id: 5, platform: 'facebook', text: 'Live este viernes a las 6pm: responderemos todas tus preguntas sobre algoritmos de redes sociales.', image: false, likes: 445, comments: 78, shares: 89, date: '2026-07-16' },
+      { id: 6, platform: 'tiktok', text: '3 herramientas GRATUITAS para crear contenido viral en 2026. El tercero te va a sorprender 🤯 #HerramientasDigitales', image: true, likes: 5678, comments: 345, shares: 890, date: '2026-07-15' },
+      { id: 7, platform: 'instagram', text: 'Behind the scenes de nuestra última campaña. El equipo trabajó increíble para lograr estos resultados.', image: true, likes: 678, comments: 34, shares: 56, date: '2026-07-14' },
+      { id: 8, platform: 'facebook', text: '¿Sabías que el 78% de los consumidores prefiere contenido de video? Aquí te enseñamos cómo empezar.', image: true, likes: 334, comments: 23, shares: 167, date: '2026-07-13' }
+    ];
+
+    const FOLLOWER_DATA = [
+      { month: 'Feb', followers: 12400 },
+      { month: 'Mar', followers: 14200 },
+      { month: 'Abr', followers: 15800 },
+      { month: 'May', followers: 18100 },
+      { month: 'Jun', followers: 21500 },
+      { month: 'Jul', followers: 24200 }
+    ];
+
+    const PLATFORM_DATA = [
+      { name: 'Instagram', key: 'instagram', followers: 14800, engagement: 4.7, color: '#d6249f' },
+      { name: 'Facebook', key: 'facebook', followers: 6200, engagement: 2.3, color: '#1877F2' },
+      { name: 'TikTok', key: 'tiktok', followers: 3200, engagement: 8.1, color: '#fff' }
+    ];
+
+    const BEST_TIMES = [
+      { time: '08:00', score: 72 },
+      { time: '10:00', score: 89 },
+      { time: '12:00', score: 95 },
+      { time: '14:00', score: 78 },
+      { time: '17:00', score: 91 },
+      { time: '19:00', score: 88 },
+      { time: '21:00', score: 83 },
+      { time: '23:00', score: 45 }
+    ];
+
+    /* ========================================
+       STATE
+    ======================================== */
+    let posts = loadJSON('sm_posts', DEFAULT_POSTS);
+    let scheduled = loadJSON('sm_scheduled', []);
+    let calYear, calMonth;
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+
+    /* ========================================
+       HELPERS
+    ======================================== */
+    function loadJSON(key, fallback) {
+      try {
+        const v = localStorage.getItem(key);
+        return v ? JSON.parse(v) : fallback;
+      } catch(e) { return fallback; }
+    }
+    function saveJSON(key, data) {
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    }
+    function formatNum(n) {
+      return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    function totalEngagement(p) { return p.likes + p.comments + p.shares; }
+
+    /* ========================================
+       TOAST
+    ======================================== */
+    function showToast(msg, type) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'cd-toast cd-toast-' + (type || 'success');
+      t.innerHTML = '<svg class="cd-toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+        (type === 'error'
+          ? '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
+          : '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>')
+        + '</svg>' + msg;
+      c.appendChild(t);
+      setTimeout(() => { t.style.animation = 'cd-toast-out 0.3s ease both'; setTimeout(() => t.remove(), 300); }, 3000);
+    }
+
+    /* ========================================
+       NAVIGATION
+    ======================================== */
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.getElementById('hamburger-btn');
+    const navBtns = document.querySelectorAll('.cd-sidebar-item[data-view]');
+    const views = document.querySelectorAll('.sm-view');
+    const topbarTitle = document.getElementById('topbar-title');
+    const viewTitles = { dashboard: 'Dashboard', posts: 'Posts', programador: 'Programador', metricas: 'Métricas' };
+
+    function switchView(name) {
+      navBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.view === name);
+        b.removeAttribute('aria-current');
+        if (b.dataset.view === name) b.setAttribute('aria-current', 'page');
+      });
+      views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+      topbarTitle.textContent = viewTitles[name] || name;
+      sidebar.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+
+    navBtns.forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+
+    hamburger.addEventListener('click', () => {
+      const open = sidebar.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 1024 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== hamburger) {
+        sidebar.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    /* ========================================
+       DASHBOARD — KPI
+    ======================================== */
+    function renderKPIs() {
+      const kpis = [
+        { label: 'Seguidores Totales', value: formatNum(24200), change: '+12.4%', positive: true },
+        { label: 'Engagement Rate', value: '5.03%', change: '+0.8%', positive: true },
+        { label: 'Alcance Semanal', value: formatNum(89400), change: '+18.2%', positive: true },
+        { label: 'Posts Este Mes', value: '23', change: '-2', positive: false }
+      ];
+      document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+        '<div class="cd-kpi">' +
+          '<div class="cd-kpi-label">' + k.label + '</div>' +
+          '<div class="cd-kpi-value">' + k.value + '</div>' +
+          '<div class="cd-kpi-change ' + (k.positive ? 'positive' : 'negative') + '">' + k.change + ' vs mes anterior</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    /* ========================================
+       DASHBOARD — FOLLOWER CHART
+    ======================================== */
+    function renderFollowerChart() {
+      const svg = document.getElementById('follower-chart');
+      const data = FOLLOWER_DATA;
+      const maxV = Math.max(...data.map(d => d.followers));
+      const minV = Math.min(...data.map(d => d.followers)) * 0.85;
+      const W = 600, H = 200, pad = 40, padR = 20, padT = 20, padB = 30;
+      const cW = W - pad - padR, cH = H - padT - padB;
+      const step = cW / (data.length - 1);
+
+      const pts = data.map((d, i) => ({
+        x: pad + i * step,
+        y: padT + cH - ((d.followers - minV) / (maxV - minV)) * cH,
+        v: d.followers,
+        label: d.month
+      }));
+
+      let html = '';
+
+      // Grid lines
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + (cH / 4) * i;
+        const val = Math.round(maxV - ((maxV - minV) / 4) * i);
+        html += '<line x1="' + pad + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>';
+        html += '<text x="' + (pad - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="#555" font-size="10" font-family="JetBrains Mono, monospace">' + (val / 1000).toFixed(1) + 'k</text>';
+      }
+
+      // Area
+      const areaPath = 'M' + pts.map(p => p.x + ',' + p.y).join(' L') + ' L' + pts[pts.length-1].x + ',' + (padT + cH) + ' L' + pts[0].x + ',' + (padT + cH) + ' Z';
+      html += '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#25D366" stop-opacity="0.3"/><stop offset="100%" stop-color="#25D366" stop-opacity="0"/></linearGradient></defs>';
+      html += '<path d="' + areaPath + '" fill="url(#areaGrad)"/>';
+
+      // Line
+      html += '<polyline points="' + pts.map(p => p.x + ',' + p.y).join(' ') + '" fill="none" stroke="#25D366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
+      // Dots and labels
+      pts.forEach(p => {
+        html += '<circle cx="' + p.x + '" cy="' + p.y + '" r="4" fill="#25D366" stroke="#0a0a0a" stroke-width="2"/>';
+        html += '<text x="' + p.x + '" y="' + (padT + cH + 18) + '" text-anchor="middle" fill="#888" font-size="10" font-family="JetBrains Mono, monospace">' + p.label + '</text>';
+      });
+
+      svg.innerHTML = html;
+    }
+
+    /* ========================================
+       DASHBOARD — PLATFORM BREAKDOWN
+    ======================================== */
+    function renderPlatformBreakdown() {
+      const el = document.getElementById('platform-breakdown');
+      const maxFollowers = Math.max(...PLATFORM_DATA.map(p => p.followers));
+      el.innerHTML = PLATFORM_DATA.map(p => {
+        const pct = (p.followers / maxFollowers * 100).toFixed(0);
+        return '<div class="cd-card" style="padding:16px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+            '<div class="sm-platform-icon ' + p.key.charAt(0) + '" style="width:32px;height:32px;border-radius:8px;background:' + (p.key === 'tiktok' ? '#000' : p.color) + ';display:flex;align-items:center;justify-content:center;">' +
+              getPlatformSVG(p.key, 16) +
+            '</div>' +
+            '<div style="flex:1;">' +
+              '<div class="sm-platform-name" style="margin:0;">' + p.name + '</div>' +
+              '<div style="font-size:11px;color:var(--cd-ink-muted);">' + p.engagement + '% engagement</div>' +
+            '</div>' +
+            '<div style="font-family:var(--cd-font-display);font-size:16px;font-weight:700;">' + formatNum(p.followers) + '</div>' +
+          '</div>' +
+          '<div class="cd-progress">' +
+            '<div class="cd-progress-bar blue" style="width:' + pct + '%;background:' + p.color + ';"></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function getPlatformSVG(platform, size) {
+      size = size || 22;
+      switch(platform) {
+        case 'instagram':
+          return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="white" stroke="none"/></svg>';
+        case 'facebook':
+          return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>';
+        case 'tiktok':
+          return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.51a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 007.04 6.3 6.34 6.34 0 005.14-6.22V9.44a8.28 8.28 0 004.83 1.55V7.53a4.85 4.85 0 01-.57-.84z"/></svg>';
+        default: return '';
+      }
+    }
+
+    /* ========================================
+       POSTS VIEW
+    ======================================== */
+    let currentFilter = 'all';
+    let currentSort = 'engagement';
+
+    function renderPosts() {
+      let filtered = currentFilter === 'all' ? [...posts] : posts.filter(p => p.platform === currentFilter);
+      if (currentSort === 'engagement') {
+        filtered.sort((a, b) => totalEngagement(b) - totalEngagement(a));
+      } else {
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+      }
+      const grid = document.getElementById('posts-grid');
+      grid.innerHTML = filtered.map(p =>
+        '<article class="sm-post-card">' +
+          '<div class="sm-post-image">' +
+            (p.image ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>') +
+            '<div class="sm-post-platform-badge" style="background:' + (p.platform === 'tiktok' ? '#000' : PLATFORM_COLORS[p.platform]) + ';">' +
+              getPlatformSVG(p.platform, 14) +
+            '</div>' +
+          '</div>' +
+          '<div class="sm-post-body">' +
+            '<p class="sm-post-text">' + escapeHtml(p.text) + '</p>' +
+            '<div class="sm-post-meta">' +
+              '<span class="sm-post-date">' + formatDate(p.date) + '</span>' +
+              '<div class="sm-post-metrics">' +
+                '<span class="sm-post-metric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>' + formatNum(p.likes) + '</span>' +
+                '<span class="sm-post-metric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' + formatNum(p.comments) + '</span>' +
+                '<span class="sm-post-metric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' + formatNum(p.shares) + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</article>'
+      ).join('');
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.getDate() + ' ' + MONTHS_ES[d.getMonth()].substring(0, 3) + '. ' + d.getFullYear();
+    }
+
+    // Filters
+    document.querySelector('.sm-filters[data-filter]')?.closest('.sm-posts-header')?.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.sm-filters').querySelectorAll('.sm-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderPosts();
+      });
+    });
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderPosts();
+      });
+    });
+
+    document.querySelectorAll('[data-sort]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSort = btn.dataset.sort;
+        renderPosts();
+      });
+    });
+
+    /* ========================================
+       PROGRAMADOR — CALENDAR
+    ======================================== */
+    function renderCalendar() {
+      const grid = document.getElementById('cal-grid');
+      document.getElementById('cal-month-label').textContent = MONTHS_ES[calMonth] + ' ' + calYear;
+
+      const firstDay = new Date(calYear, calMonth, 1);
+      let startIdx = firstDay.getDay() - 1;
+      if (startIdx < 0) startIdx = 6;
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+      const today = new Date();
+
+      let html = DAY_NAMES.map(d => '<div class="sm-cal-dayname">' + d + '</div>').join('');
+
+      // Previous month fill
+      for (let i = startIdx - 1; i >= 0; i--) {
+        html += '<div class="sm-cal-day other-month"><span class="sm-cal-day-num">' + (daysInPrev - i) + '</span></div>';
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const dayScheduled = scheduled.filter(s => s.date === dateStr);
+        const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+
+        html += '<div class="sm-cal-day' + (isToday ? ' today' : '') + '" data-date="' + dateStr + '" tabindex="0" role="gridcell" aria-label="' + d + ' de ' + MONTHS_ES[calMonth] + (dayScheduled.length ? ', ' + dayScheduled.length + ' posts programados' : '') + '">' +
+          '<span class="sm-cal-day-num">' + d + '</span>' +
+          '<div class="sm-cal-dots">' +
+            dayScheduled.map(s => '<span class="sm-cal-dot ' + s.platform.substring(0, 2) + '"></span>').join('') +
+          '</div>' +
+        '</div>';
+      }
+
+      // Next month fill
+      const totalCells = startIdx + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let i = 1; i <= remaining; i++) {
+        html += '<div class="sm-cal-day other-month"><span class="sm-cal-day-num">' + i + '</span></div>';
+      }
+
+      grid.innerHTML = html;
+
+      // Click handlers
+      grid.querySelectorAll('.sm-cal-day:not(.other-month)').forEach(cell => {
+        cell.addEventListener('click', () => showDayDetail(cell.dataset.date));
+      });
+    }
+
+    function showDayDetail(dateStr) {
+      const el = document.getElementById('day-detail');
+      const dayScheduled = scheduled.filter(s => s.date === dateStr);
+      if (dayScheduled.length === 0) {
+        el.innerHTML = '';
+        return;
+      }
+      const d = new Date(dateStr + 'T12:00:00');
+      el.innerHTML = '<div class="sm-day-detail">' +
+        '<div class="sm-day-detail-title">Posts programados — ' + d.getDate() + ' de ' + MONTHS_ES[d.getMonth()] + '</div>' +
+        dayScheduled.map(s =>
+          '<div class="sm-scheduled-item">' +
+            '<div class="sm-scheduled-dot" style="background:' + PLATFORM_COLORS[s.platform] + ';"></div>' +
+            '<div class="sm-scheduled-info">' +
+              '<div class="sm-scheduled-time">' + s.time + ' · ' + s.platform.charAt(0).toUpperCase() + s.platform.slice(1) + '</div>' +
+              '<div class="sm-scheduled-text">' + escapeHtml(s.content) + '</div>' +
+            '</div>' +
+            '<button class="sm-scheduled-delete" data-id="' + s.id + '" aria-label="Eliminar post programado">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>' +
+            '</button>' +
+          '</div>'
+        ).join('') +
+      '</div>';
+
+      el.querySelectorAll('.sm-scheduled-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+          scheduled = scheduled.filter(s => s.id !== Number(btn.dataset.id));
+          saveJSON('sm_scheduled', scheduled);
+          renderCalendar();
+          showDayDetail(dateStr);
+          showToast('Post programado eliminado');
+        });
+      });
+    }
+
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      document.getElementById('day-detail').innerHTML = '';
+      renderCalendar();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      document.getElementById('day-detail').innerHTML = '';
+      renderCalendar();
+    });
+
+    /* ========================================
+       MODAL
+    ======================================== */
+    const modal = document.getElementById('post-modal');
+    const btnNewPost = document.getElementById('btn-new-post');
+    const modalClose = document.getElementById('modal-close');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalSave = document.getElementById('modal-save');
+    let selectedPlatform = 'instagram';
+    let imageUploaded = false;
+
+    function openModal() {
+      modal.classList.add('active');
+      document.getElementById('modal-content').value = '';
+      document.getElementById('modal-date').value = '';
+      document.getElementById('modal-time').value = '';
+      selectedPlatform = 'instagram';
+      imageUploaded = false;
+      document.getElementById('image-preview').style.display = 'none';
+      document.getElementById('upload-area').style.display = '';
+      document.querySelectorAll('.sm-platform-option').forEach(b => b.classList.toggle('selected', b.dataset.platform === 'instagram'));
+      document.getElementById('modal-content').focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+    }
+
+    btnNewPost.addEventListener('click', openModal);
+    modalClose.addEventListener('click', closeModal);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('active')) closeModal(); });
+
+    document.querySelectorAll('.sm-platform-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedPlatform = btn.dataset.platform;
+        document.querySelectorAll('.sm-platform-option').forEach(b => b.classList.toggle('selected', b === btn));
+      });
+    });
+
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.addEventListener('click', simulateUpload);
+    uploadArea.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); simulateUpload(); } });
+
+    function simulateUpload() {
+      imageUploaded = true;
+      uploadArea.style.display = 'none';
+      const preview = document.getElementById('image-preview');
+      preview.style.display = 'flex';
+      preview.textContent = 'imagen_cargada.jpg';
+    }
+
+    modalSave.addEventListener('click', () => {
+      const content = document.getElementById('modal-content').value.trim();
+      const date = document.getElementById('modal-date').value;
+      const time = document.getElementById('modal-time').value;
+      if (!content || !date || !time) {
+        showToast('Por favor completa todos los campos', 'error');
+        return;
+      }
+      const newScheduled = {
+        id: Date.now(),
+        platform: selectedPlatform,
+        content: content,
+        date: date,
+        time: time,
+        image: imageUploaded
+      };
+      scheduled.push(newScheduled);
+      saveJSON('sm_scheduled', scheduled);
+      closeModal();
+      renderCalendar();
+      showToast('Post programado correctamente');
+    });
+
+    /* ========================================
+       MÉTRICAS VIEW
+    ======================================== */
+    function renderMetrics() {
+      // Engagement bar chart
+      const engData = [
+        { label: 'Instagram', value: 4.7, color: '#d6249f' },
+        { label: 'Facebook', value: 2.3, color: '#1877F2' },
+        { label: 'TikTok', value: 8.1, color: '#fff' }
+      ];
+      const engMax = Math.max(...engData.map(d => d.value));
+      const engChart = document.getElementById('engagement-chart');
+      engChart.innerHTML = engData.map(d => {
+        const h = (d.value / engMax * 160);
+        return '<div class="sm-bar-item">' +
+          '<div class="sm-bar-value">' + d.value + '%</div>' +
+          '<div class="sm-bar" style="height:' + h + 'px;background:' + d.color + ';"></div>' +
+          '<div class="sm-bar-label">' + d.label + '</div>' +
+        '</div>';
+      }).join('');
+
+      // Best times
+      const bestTimesEl = document.getElementById('best-times');
+      const maxScore = Math.max(...BEST_TIMES.map(t => t.score));
+      bestTimesEl.innerHTML = BEST_TIMES.map(t => {
+        const isBest = t.score === maxScore;
+        return '<div class="sm-time-slot' + (isBest ? ' best' : '') + '">' +
+          '<div class="sm-time-slot-time">' + t.time + '</div>' +
+          '<div class="sm-time-slot-score">' + t.score + '% engagement' + (isBest ? ' ★' : '') + '</div>' +
+        '</div>';
+      }).join('');
+
+      // Top posts table
+      const sorted = [...posts].sort((a, b) => totalEngagement(b) - totalEngagement(a));
+      const tbody = document.querySelector('#top-posts-table tbody');
+      tbody.innerHTML = sorted.map(p => {
+        const eng = totalEngagement(p);
+        const engPct = (eng / (sorted[0] ? totalEngagement(sorted[0]) : 1) * 100).toFixed(0);
+        return '<tr>' +
+          '<td><span class="cd-badge cd-badge-info"><span class="cd-badge-dot" style="background:' + PLATFORM_COLORS[p.platform] + ';"></span>' + p.platform.charAt(0).toUpperCase() + p.platform.slice(1) + '</span></td>' +
+          '<td style="max-width:250px;"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(p.text) + '</span></td>' +
+          '<td style="font-family:var(--cd-font-display);font-size:13px;">' + formatNum(p.likes) + '</td>' +
+          '<td style="font-family:var(--cd-font-display);font-size:13px;">' + formatNum(p.comments) + '</td>' +
+          '<td style="font-family:var(--cd-font-display);font-size:13px;">' + formatNum(p.shares) + '</td>' +
+          '<td>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<div class="cd-progress" style="flex:1;height:4px;"><div class="cd-progress-bar green" style="width:' + engPct + '%;"></div></div>' +
+              '<span style="font-family:var(--cd-font-display);font-size:11px;color:var(--cd-ink-soft);min-width:40px;text-align:right;">' + formatNum(eng) + '</span>' +
+            '</div>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    /* ========================================
+       INIT
+    ======================================== */
+    renderKPIs();
+    renderFollowerChart();
+    renderPlatformBreakdown();
+    renderPosts();
+    renderCalendar();
+    renderMetrics();
+
+  })();
+  </script>
+</body>
+</html>
