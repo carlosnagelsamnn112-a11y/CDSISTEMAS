@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Facturación — CD Sistemas</title>
+  <link rel="icon" href="../assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { display: flex; min-height: 100vh; }
+    .content { flex: 1; margin-left: 240px; padding: 24px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .toolbar .cd-search { flex: 1; min-width: 200px; }
+    .filter-chips { display: flex; gap: 8px; }
+    .chip { padding: 6px 14px; font-size: 12px; font-family: var(--cd-font-display); font-weight: 600; border-radius: 20px; border: 1px solid var(--cd-line); background: none; color: var(--cd-ink-soft); cursor: pointer; transition: all 0.2s ease; }
+    .chip:hover { border-color: var(--cd-line-strong); color: var(--cd-ink); }
+    .chip.active { background: var(--cd-ink); color: var(--cd-bg); border-color: var(--cd-ink); }
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .status-paid { background: rgba(37, 211, 102, 0.12); color: #25D366; }
+    .status-pending { background: rgba(251, 188, 4, 0.12); color: #FBBC04; }
+    .status-overdue { background: rgba(234, 67, 53, 0.12); color: #EA4335; }
+    .table-actions { display: flex; gap: 6px; }
+    .table-actions button { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--cd-line); background: none; color: var(--cd-ink-soft); display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    .table-actions button:hover { border-color: var(--cd-ink); color: var(--cd-ink); }
+    .table-actions button svg { width: 14px; height: 14px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--cd-ink-soft); }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-full { grid-column: 1 / -1; }
+    .items-table { width: 100%; margin-top: 12px; }
+    .items-table input { width: 70px; padding: 6px 8px; font-size: 13px; background: var(--cd-bg); border: 1px solid var(--cd-line); border-radius: 4px; color: var(--cd-ink); text-align: right; }
+    .items-table input:focus { border-color: var(--cd-ink); outline: none; }
+    .items-table td { padding: 8px; }
+    .items-table .item-total { font-weight: 600; text-align: right; }
+    .add-item-row { margin-top: 12px; }
+    .form-total { display: flex; justify-content: flex-end; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--cd-line); font-size: 14px; }
+    .form-total .total-value { font-size: 20px; font-weight: 800; }
+
+    /* Invoice preview */
+    .invoice-preview { background: #fff; color: #111; border-radius: 8px; padding: 32px; max-width: 600px; margin: 0 auto; }
+    .invoice-preview h2 { font-size: 20px; margin-bottom: 4px; }
+    .invoice-preview .inv-meta { display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 24px; }
+    .invoice-preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .invoice-preview th { text-align: left; padding: 8px; border-bottom: 2px solid #ddd; font-size: 11px; text-transform: uppercase; color: #888; }
+    .invoice-preview td { padding: 8px; border-bottom: 1px solid #eee; }
+    .invoice-preview .inv-total { text-align: right; font-size: 18px; font-weight: 800; margin-top: 16px; }
+
+    @media (max-width: 1024px) {
+      .content { margin-left: 0; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="#main" class="cd-skip-link">Saltar al contenido</a>
+
+<!-- SIDEBAR -->
+<nav class="cd-sidebar" id="sidebar" aria-label="Navegación del sistema">
+  <div class="cd-sidebar-brand">
+    <img src="../assets/logo.png" alt="">
+    <span>FACTURAPP</span>
+  </div>
+  <div class="cd-sidebar-nav">
+    <button class="cd-sidebar-item active" data-view="dashboard" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="cd-sidebar-item" data-view="invoices">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Facturas
+    </button>
+    <button class="cd-sidebar-item" data-view="clients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </button>
+  </div>
+  <div style="padding: 16px 20px; border-top: 1px solid var(--cd-line);">
+    <a href="../index.html" class="cd-sidebar-item" style="padding: 0;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Volver al catálogo
+    </a>
+  </div>
+</nav>
+
+<!-- HAMBURGER -->
+<button class="cd-hamburger" id="hamburgerBtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!-- MAIN CONTENT -->
+<main class="content" id="main">
+
+  <!-- VIEW: DASHBOARD -->
+  <div id="view-dashboard" class="view-panel">
+    <div class="page-header">
+      <div>
+        <h1 class="cd-title">Dashboard</h1>
+        <p class="cd-text" style="margin-top:4px;">Resumen de tu facturación</p>
+      </div>
+      <button class="cd-btn cd-btn-primary" onclick="openNewInvoice()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Factura
+      </button>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <h2 class="cd-subtitle" style="margin-bottom:16px;">Facturas Recientes</h2>
+    <div class="cd-table-wrap">
+      <table class="cd-table">
+        <thead>
+          <tr>
+            <th>N° Factura</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="recentInvoices"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VIEW: INVOICES -->
+  <div id="view-invoices" class="view-panel" style="display:none;">
+    <div class="page-header">
+      <h1 class="cd-title">Facturas</h1>
+      <button class="cd-btn cd-btn-primary" onclick="openNewInvoice()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva Factura
+      </button>
+    </div>
+    <div class="toolbar">
+      <div class="cd-search">
+        <svg class="cd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="cd-search-input" id="searchInput" placeholder="Buscar por número, cliente..." aria-label="Buscar facturas">
+      </div>
+      <div class="filter-chips">
+        <button class="chip active" data-filter="TODAS">Todas</button>
+        <button class="chip" data-filter="Pagada">Pagadas</button>
+        <button class="chip" data-filter="Pendiente">Pendientes</button>
+        <button class="chip" data-filter="Vencida">Vencidas</button>
+      </div>
+    </div>
+    <div class="cd-table-wrap">
+      <table class="cd-table">
+        <thead>
+          <tr>
+            <th onclick="sortTable('num')">N° Factura ↕</th>
+            <th onclick="sortTable('client')">Cliente ↕</th>
+            <th onclick="sortTable('date')">Fecha ↕</th>
+            <th onclick="sortTable('total')">Total ↕</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="invoicesTable"></tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>No se encontraron facturas</p>
+    </div>
+  </div>
+
+  <!-- VIEW: CLIENTS -->
+  <div id="view-clients" class="view-panel" style="display:none;">
+    <div class="page-header">
+      <h1 class="cd-title">Clientes</h1>
+      <button class="cd-btn cd-btn-primary" onclick="openModal('clientModal')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo Cliente
+      </button>
+    </div>
+    <div class="cd-table-wrap">
+      <table class="cd-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>NIT/Cédula</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+          </tr>
+        </thead>
+        <tbody id="clientsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL: NUEVA FACTURA -->
+<div class="cd-modal-overlay" id="invoiceModal" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle">
+  <div class="cd-modal" style="max-width: 650px;">
+    <div class="cd-modal-header">
+      <h2 class="cd-subtitle" id="invoiceModalTitle">Nueva Factura</h2>
+      <button class="cd-modal-close" onclick="closeModal('invoiceModal')" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cd-modal-body">
+      <div class="form-grid">
+        <div>
+          <label class="cd-label-form" for="invClient">Cliente</label>
+          <select class="cd-input cd-select" id="invClient"></select>
+        </div>
+        <div>
+          <label class="cd-label-form" for="invDate">Fecha</label>
+          <input type="date" class="cd-input" id="invDate">
+        </div>
+        <div class="form-full">
+          <label class="cd-label-form">Ítems</label>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Descripción</th>
+                <th>Cant.</th>
+                <th>Precio U.</th>
+                <th style="text-align:right;">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+          <button class="cd-btn cd-btn-ghost add-item-row" onclick="addItemRow()">+ Agregar ítem</button>
+        </div>
+      </div>
+      <div class="form-total">
+        <span>Subtotal:</span> <span id="subtotalValue">$0</span>
+        <span>IVA (19%):</span> <span id="ivaValue">$0</span>
+        <span class="total-value">Total: <span id="totalValue">$0</span></span>
+      </div>
+    </div>
+    <div class="cd-modal-footer">
+      <button class="cd-btn cd-btn-ghost" onclick="closeModal('invoiceModal')">Cancelar</button>
+      <button class="cd-btn cd-btn-primary" onclick="saveInvoice()">Guardar Factura</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VER FACTURA -->
+<div class="cd-modal-overlay" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
+  <div class="cd-modal" style="max-width: 650px;">
+    <div class="cd-modal-header">
+      <h2 class="cd-subtitle" id="previewModalTitle">Vista Previa</h2>
+      <button class="cd-modal-close" onclick="closeModal('previewModal')" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cd-modal-body" id="previewBody"></div>
+    <div class="cd-modal-footer">
+      <button class="cd-btn cd-btn-ghost" onclick="closeModal('previewModal')">Cerrar</button>
+      <button class="cd-btn cd-btn-primary" onclick="exportPDF()">Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO CLIENTE -->
+<div class="cd-modal-overlay" id="clientModal" role="dialog" aria-modal="true">
+  <div class="cd-modal">
+    <div class="cd-modal-header">
+      <h2 class="cd-subtitle">Nuevo Cliente</h2>
+      <button class="cd-modal-close" onclick="closeModal('clientModal')" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cd-modal-body">
+      <div class="form-grid">
+        <div class="form-full">
+          <label class="cd-label-form" for="clientName">Nombre / Razón Social</label>
+          <input type="text" class="cd-input" id="clientName" placeholder="Ej: Carlos Alarcón">
+        </div>
+        <div>
+          <label class="cd-label-form" for="clientNit">NIT / Cédula</label>
+          <input type="text" class="cd-input" id="clientNit" placeholder="Ej: 1.234.567-8">
+        </div>
+        <div>
+          <label class="cd-label-form" for="clientEmail">Email</label>
+          <input type="email" class="cd-input" id="clientEmail" placeholder="correo@ejemplo.com">
+        </div>
+        <div>
+          <label class="cd-label-form" for="clientPhone">Teléfono</label>
+          <input type="tel" class="cd-input" id="clientPhone" placeholder="Ej: 310 484 8585">
+        </div>
+      </div>
+    </div>
+    <div class="cd-modal-footer">
+      <button class="cd-btn cd-btn-ghost" onclick="closeModal('clientModal')">Cancelar</button>
+      <button class="cd-btn cd-btn-primary" onclick="saveClient()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="cd-toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script>
+  // ===== DATA =====
+  const clients = JSON.parse(localStorage.getItem('fac_clients') || '[]');
+  const invoices = JSON.parse(localStorage.getItem('fac_invoices') || '[]');
+
+  if (clients.length === 0) {
+    clients.push(
+      { id: 1, name: 'Ferretería El Martillo', nit: '900.123.456-7', email: 'elmartillo@email.com', phone: '310 123 4567' },
+      { id: 2, name: 'Café Aroma Total', nit: '830.456.789-0', email: 'cafeamora@email.com', phone: '315 987 6543' },
+      { id: 3, name: 'Dra. Carolina Gómez', nit: '1.023.456.789', email: 'dcarolina@email.com', phone: '301 555 1234' },
+      { id: 4, name: 'Panadería El Trigal', nit: '901.789.012-3', email: 'eltrigal@email.com', phone: '318 222 3344' },
+      { id: 5, name: 'TechStore Bucaramanga', nit: '900.888.999-1', email: 'info@techstore.co', phone: '300 444 5566' }
+    );
+    localStorage.setItem('fac_clients', JSON.stringify(clients));
+  }
+
+  if (invoices.length === 0) {
+    const now = new Date();
+    invoices.push(
+      { id: 'FAC-001', clientId: 1, date: '2026-07-10', items: [{ desc: 'Cemento Portland 50kg', qty: 10, price: 28000 }, { desc: 'Varilla #3 (10mm)', qty: 20, price: 8500 }], status: 'Pagada' },
+      { id: 'FAC-002', clientId: 2, date: '2026-07-12', items: [{ desc: 'Café Especial 1kg', qty: 5, price: 45000 }, { desc: 'Vaso térmico 350ml', qty: 10, price: 12000 }], status: 'Pendiente' },
+      { id: 'FAC-003', clientId: 3, date: '2026-07-14', items: [{ desc: 'Consulta general', qty: 1, price: 80000 }], status: 'Pagada' },
+      { id: 'FAC-004', clientId: 4, date: '2026-07-01', items: [{ desc: 'Harina especial 25kg', qty: 4, price: 62000 }, { desc: 'Levadura seca 500g', qty: 20, price: 3500 }], status: 'Vencida' },
+      { id: 'FAC-005', clientId: 5, date: '2026-07-15', items: [{ desc: 'Mouse inalámbrico', qty: 3, price: 45000 }, { desc: 'Teclado mecánico', qty: 2, price: 120000 }], status: 'Pendiente' }
+    );
+    localStorage.setItem('fac_invoices', JSON.stringify(invoices));
+  }
+
+  // ===== UTILS =====
+  function formatCOP(n) { return '$' + n.toLocaleString('es-CO'); }
+  function getInvTotal(inv) { return inv.items.reduce((s, i) => s + i.qty * i.price, 0); }
+  function getClientName(id) { const c = clients.find(x => x.id === id); return c ? c.name : 'Desconocido'; }
+  function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `cd-toast cd-toast-${type}`;
+    t.innerHTML = `<svg class="cd-toast-icon" viewBox="0 0 24 24" fill="none" stroke="${type === 'success' ? '#25D366' : '#EA4335'}" stroke-width="2">${type === 'success' ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'}</svg>${msg}`;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => { t.style.animation = 'cd-toast-out 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3000);
+  }
+
+  // ===== NAVIGATION =====
+  let currentView = 'dashboard';
+  let currentFilter = 'TODAS';
+  let sortField = 'date';
+  let sortDir = -1;
+
+  document.querySelectorAll('.cd-sidebar-item[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cd-sidebar-item[data-view]').forEach(b => { b.classList.remove('active'); b.removeAttribute('aria-current'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-current', 'page');
+      document.querySelectorAll('.view-panel').forEach(v => v.style.display = 'none');
+      document.getElementById('view-' + btn.dataset.view).style.display = '';
+      currentView = btn.dataset.view;
+      render();
+      closeSidebar();
+    });
+  });
+
+  // Hamburger
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  hamburgerBtn.addEventListener('click', () => {
+    const open = sidebar.classList.toggle('open');
+    hamburgerBtn.setAttribute('aria-expanded', open);
+  });
+  function closeSidebar() { sidebar.classList.remove('open'); hamburgerBtn.setAttribute('aria-expanded', 'false'); }
+
+  // ===== RENDER =====
+  function render() {
+    renderKPIs();
+    renderRecentInvoices();
+    renderInvoicesTable();
+    renderClientsTable();
+    renderClientSelect();
+  }
+
+  function renderKPIs() {
+    const totalPaid = invoices.filter(i => i.status === 'Pagada').reduce((s, i) => s + getInvTotal(i), 0);
+    const totalPending = invoices.filter(i => i.status === 'Pendiente').reduce((s, i) => s + getInvTotal(i), 0);
+    const totalOverdue = invoices.filter(i => i.status === 'Vencida').reduce((s, i) => s + getInvTotal(i), 0);
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="cd-kpi"><div class="cd-kpi-label">Total Facturado</div><div class="cd-kpi-value">${formatCOP(totalPaid + totalPending + totalOverdue)}</div><div class="cd-kpi-change positive">${invoices.length} facturas</div></div>
+      <div class="cd-kpi"><div class="cd-kpi-label">Cobrado</div><div class="cd-kpi-value">${formatCOP(totalPaid)}</div><div class="cd-kpi-change positive">Pagadas: ${invoices.filter(i => i.status === 'Pagada').length}</div></div>
+      <div class="cd-kpi"><div class="cd-kpi-label">Pendiente</div><div class="cd-kpi-value">${formatCOP(totalPending)}</div><div class="cd-kpi-change" style="color:var(--cd-warning);">Por cobrar: ${invoices.filter(i => i.status === 'Pendiente').length}</div></div>
+      <div class="cd-kpi"><div class="cd-kpi-label">Vencidas</div><div class="cd-kpi-value">${formatCOP(totalOverdue)}</div><div class="cd-kpi-change negative">Vencidas: ${invoices.filter(i => i.status === 'Vencida').length}</div></div>
+    `;
+  }
+
+  function renderRecentInvoices() {
+    const recent = [...invoices].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+    document.getElementById('recentInvoices').innerHTML = recent.map(inv => `
+      <tr>
+        <td style="font-family:var(--cd-font-display);font-weight:600;">${inv.id}</td>
+        <td>${getClientName(inv.clientId)}</td>
+        <td>${new Date(inv.date + 'T12:00:00').toLocaleDateString('es-CO')}</td>
+        <td style="font-weight:700;">${formatCOP(getInvTotal(inv))}</td>
+        <td><span class="status-pill status-${inv.status.toLowerCase()}">${inv.status}</span></td>
+        <td class="table-actions">
+          <button onclick="previewInvoice('${inv.id}')" title="Ver factura" aria-label="Ver factura ${inv.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button onclick="toggleStatus('${inv.id}')" title="Cambiar estado" aria-label="Cambiar estado de ${inv.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function renderInvoicesTable() {
+    let filtered = invoices.filter(inv => {
+      if (currentFilter !== 'TODAS' && inv.status !== currentFilter) return false;
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      if (q && !inv.id.toLowerCase().includes(q) && !getClientName(inv.clientId).toLowerCase().includes(q)) return false;
+      return true;
+    });
+    filtered.sort((a, b) => {
+      let va, vb;
+      switch (sortField) {
+        case 'num': va = a.id; vb = b.id; break;
+        case 'client': va = getClientName(a.clientId); vb = getClientName(b.clientId); break;
+        case 'date': va = a.date; vb = b.date; break;
+        case 'total': va = getInvTotal(a); vb = getInvTotal(b); break;
+        default: va = a.date; vb = b.date;
+      }
+      if (typeof va === 'string') return sortDir * va.localeCompare(vb);
+      return sortDir * (va - vb);
+    });
+
+    const tbody = document.getElementById('invoicesTable');
+    const empty = document.getElementById('emptyState');
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = '';
+    } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = filtered.map(inv => `
+        <tr>
+          <td style="font-family:var(--cd-font-display);font-weight:600;">${inv.id}</td>
+          <td>${getClientName(inv.clientId)}</td>
+          <td>${new Date(inv.date + 'T12:00:00').toLocaleDateString('es-CO')}</td>
+          <td style="font-weight:700;">${formatCOP(getInvTotal(inv))}</td>
+          <td><span class="status-pill status-${inv.status.toLowerCase()}">${inv.status}</span></td>
+          <td class="table-actions">
+            <button onclick="previewInvoice('${inv.id}')" title="Ver factura" aria-label="Ver factura ${inv.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button onclick="toggleStatus('${inv.id}')" title="Cambiar estado" aria-label="Cambiar estado de ${inv.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function renderClientsTable() {
+    document.getElementById('clientsTable').innerHTML = clients.map(c => `
+      <tr>
+        <td style="font-weight:600;">${c.name}</td>
+        <td style="font-family:var(--cd-font-display);font-size:12px;">${c.nit}</td>
+        <td>${c.email}</td>
+        <td>${c.phone}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderClientSelect() {
+    const sel = document.getElementById('invClient');
+    sel.innerHTML = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+
+  // ===== ACTIONS =====
+  function sortTable(field) {
+    if (sortField === field) sortDir *= -1;
+    else { sortField = field; sortDir = 1; }
+    renderInvoicesTable();
+  }
+
+  function toggleStatus(id) {
+    const inv = invoices.find(i => i.id === id);
+    if (!inv) return;
+    const cycle = { 'Pendiente': 'Pagada', 'Pagada': 'Pagada', 'Vencida': 'Pagada' };
+    inv.status = cycle[inv.status] || 'Pagada';
+    localStorage.setItem('fac_invoices', JSON.stringify(invoices));
+    render();
+    showToast(`Factura ${id} marcada como ${inv.status}`);
+  }
+
+  function previewInvoice(id) {
+    const inv = invoices.find(i => i.id === id);
+    if (!inv) return;
+    const client = clients.find(c => c.id === inv.clientId);
+    const subtotal = getInvTotal(inv);
+    const iva = Math.round(subtotal * 0.19);
+    document.getElementById('previewBody').innerHTML = `
+      <div class="invoice-preview">
+        <h2>CD SISTEMAS</h2>
+        <p style="font-size:12px;color:#888;">NIT: 900.123.456-7</p>
+        <div class="inv-meta">
+          <div><strong>Factura:</strong> ${inv.id}<br><strong>Fecha:</strong> ${new Date(inv.date + 'T12:00:00').toLocaleDateString('es-CO')}</div>
+          <div style="text-align:right;"><strong>Cliente:</strong> ${client ? client.name : 'N/A'}<br><strong>NIT:</strong> ${client ? client.nit : 'N/A'}</div>
+        </div>
+        <table>
+          <thead><tr><th>Descripción</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">P. Unitario</th><th style="text-align:right;">Total</th></tr></thead>
+          <tbody>${inv.items.map(i => `<tr><td>${i.desc}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:right;">${formatCOP(i.price)}</td><td style="text-align:right;font-weight:600;">${formatCOP(i.qty * i.price)}</td></tr>`).join('')}</tbody>
+        </table>
+        <div style="text-align:right;margin-top:16px;font-size:13px;">
+          <div>Subtotal: <strong>${formatCOP(subtotal)}</strong></div>
+          <div>IVA (19%): <strong>${formatCOP(iva)}</strong></div>
+          <div class="inv-total">TOTAL: ${formatCOP(subtotal + iva)}</div>
+        </div>
+      </div>
+    `;
+    openModal('previewModal');
+  }
+
+  function exportPDF() {
+    showToast('Simulación: factura exportada en PDF');
+    closeModal('previewModal');
+  }
+
+  // ===== NEW INVOICE =====
+  let itemRows = [];
+  function openNewInvoice() {
+    itemRows = [];
+    document.getElementById('invDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('itemsBody').innerHTML = '';
+    addItemRow();
+    updateTotals();
+    openModal('invoiceModal');
+  }
+
+  function addItemRow() {
+    const id = Date.now();
+    itemRows.push(id);
+    const tr = document.createElement('tr');
+    tr.id = 'item-' + id;
+    tr.innerHTML = `
+      <td><input type="text" placeholder="Descripción" style="width:100%;" class="cd-input" data-field="desc"></td>
+      <td><input type="number" value="1" min="1" data-field="qty" onchange="updateTotals()"></td>
+      <td><input type="number" value="0" min="0" data-field="price" onchange="updateTotals()"></td>
+      <td class="item-total">$0</td>
+      <td><button class="cd-btn cd-btn-ghost cd-btn-sm" onclick="removeItemRow(${id})" aria-label="Eliminar ítem">✕</button></td>
+    `;
+    document.getElementById('itemsBody').appendChild(tr);
+  }
+
+  function removeItemRow(id) {
+    const tr = document.getElementById('item-' + id);
+    if (tr) tr.remove();
+    itemRows = itemRows.filter(i => i !== id);
+    updateTotals();
+  }
+
+  function updateTotals() {
+    let subtotal = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(tr => {
+      const qty = parseInt(tr.querySelector('[data-field="qty"]').value) || 0;
+      const price = parseInt(tr.querySelector('[data-field="price"]').value) || 0;
+      const total = qty * price;
+      tr.querySelector('.item-total').textContent = formatCOP(total);
+      subtotal += total;
+    });
+    const iva = Math.round(subtotal * 0.19);
+    document.getElementById('subtotalValue').textContent = formatCOP(subtotal);
+    document.getElementById('ivaValue').textContent = formatCOP(iva);
+    document.getElementById('totalValue').textContent = formatCOP(subtotal + iva);
+  }
+
+  function saveInvoice() {
+    const clientId = parseInt(document.getElementById('invClient').value);
+    const date = document.getElementById('invDate').value;
+    const items = [];
+    document.querySelectorAll('#itemsBody tr').forEach(tr => {
+      const desc = tr.querySelector('[data-field="desc"]').value.trim();
+      const qty = parseInt(tr.querySelector('[data-field="qty"]').value) || 0;
+      const price = parseInt(tr.querySelector('[data-field="price"]').value) || 0;
+      if (desc && qty > 0 && price > 0) items.push({ desc, qty, price });
+    });
+    if (items.length === 0) { showToast('Agrega al menos un ítem válido', 'error'); return; }
+    const num = String(invoices.length + 1).padStart(3, '0');
+    invoices.push({ id: 'FAC-' + num, clientId, date, items, status: 'Pendiente' });
+    localStorage.setItem('fac_invoices', JSON.stringify(invoices));
+    closeModal('invoiceModal');
+    render();
+    showToast('Factura creada exitosamente');
+  }
+
+  // ===== CLIENTS =====
+  function saveClient() {
+    const name = document.getElementById('clientName').value.trim();
+    const nit = document.getElementById('clientNit').value.trim();
+    const email = document.getElementById('clientEmail').value.trim();
+    const phone = document.getElementById('clientPhone').value.trim();
+    if (!name) { showToast('Ingresa el nombre del cliente', 'error'); return; }
+    clients.push({ id: Date.now(), name, nit, email, phone });
+    localStorage.setItem('fac_clients', JSON.stringify(clients));
+    closeModal('clientModal');
+    render();
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientNit').value = '';
+    document.getElementById('clientEmail').value = '';
+    document.getElementById('clientPhone').value = '';
+    showToast('Cliente registrado');
+  }
+
+  // ===== FILTERS & SEARCH =====
+  document.querySelectorAll('.chip[data-filter]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.dataset.filter;
+      renderInvoicesTable();
+    });
+  });
+
+  let searchTimeout;
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => renderInvoicesTable(), 250);
+  });
+
+  // ===== MODALS =====
+  function openModal(id) {
+    const overlay = document.getElementById(id);
+    overlay.classList.add('active');
+    const firstInput = overlay.querySelector('input, select, button:not(.cd-modal-close)');
+    if (firstInput) setTimeout(() => firstInput.focus(), 100);
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  document.querySelectorAll('.cd-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('active'); });
+  });
+
+  // ===== INIT =====
+  render();
+</script>
+</body>
+</html>

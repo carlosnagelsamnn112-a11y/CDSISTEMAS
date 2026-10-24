@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOTEL管理 — Panel de Administración</title>
+  <link rel="icon" type="image/png" href="../assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .hotel-main { display: flex; min-height: 100vh; }
+    .hotel-content { flex: 1; margin-left: 240px; padding: 24px; min-height: 100vh; }
+    .hotel-topbar { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+    .hotel-view { display: none; }
+    .hotel-view.active { display: block; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .chart-area { background: var(--cd-bg-panel); border: 1px solid var(--cd-line); border-radius: var(--cd-radius); padding: 24px; margin-bottom: 28px; }
+    .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1); min-height: 4px; }
+    .bar-label { font-size: 11px; color: var(--cd-ink-soft); font-family: var(--cd-font-display); }
+    .bar-value { font-size: 10px; font-weight: 700; color: var(--cd-ink); font-family: var(--cd-font-display); }
+    .upcoming-section { margin-bottom: 28px; }
+    .checkin-list { display: flex; flex-direction: column; gap: 8px; }
+    .checkin-item { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: var(--cd-bg-panel); border: 1px solid var(--cd-line); border-radius: var(--cd-radius); transition: all 0.2s ease; }
+    .checkin-item:hover { border-color: var(--cd-line-strong); background: var(--cd-bg-panel-soft); }
+    .checkin-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--cd-bg-elevated); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--cd-accent); border: 1px solid var(--cd-line); }
+    .checkin-info { flex: 1; }
+    .checkin-name { font-size: 14px; font-weight: 600; }
+    .checkin-detail { font-size: 12px; color: var(--cd-ink-soft); }
+    .rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .room-card { background: var(--cd-bg-panel); border: 1px solid var(--cd-line); border-radius: var(--cd-radius); padding: 18px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
+    .room-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .room-card.status-disponible::before { background: #25D366; }
+    .room-card.status-ocupada::before { background: #EA4335; }
+    .room-card.status-mantenimiento::before { background: #FBBC04; }
+    .room-card:hover { transform: translateY(-3px); box-shadow: var(--cd-shadow); border-color: var(--cd-line-strong); }
+    .room-number { font-family: var(--cd-font-display); font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .room-type { font-size: 12px; color: var(--cd-ink-soft); margin-bottom: 12px; }
+    .room-status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+    .room-status-badge.disponible { color: #25D366; background: rgba(37, 211, 102, 0.1); }
+    .room-status-badge.ocupada { color: #EA4335; background: rgba(234, 67, 53, 0.1); }
+    .room-status-badge.mantenimiento { color: #FBBC04; background: rgba(251, 188, 4, 0.1); }
+    .room-price { font-size: 13px; color: var(--cd-ink-soft); margin-top: 10px; font-family: var(--cd-font-display); }
+    .filters-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--cd-line); background: none; color: var(--cd-ink-soft); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+    .filter-chip:hover { border-color: var(--cd-line-strong); color: var(--cd-ink); }
+    .filter-chip.active { background: var(--cd-ink); color: var(--cd-bg); border-color: var(--cd-ink); }
+    .table-actions { display: flex; gap: 6px; }
+    .badge-confirmada { color: #25D366; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); }
+    .badge-pendiente { color: #FBBC04; background: rgba(251, 188, 4, 0.1); border: 1px solid rgba(251, 188, 4, 0.3); }
+    .badge-cancelada { color: #EA4335; background: rgba(234, 67, 53, 0.1); border: 1px solid rgba(234, 67, 53, 0.3); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .price-summary { background: var(--cd-bg); border: 1px solid var(--cd-line); border-radius: var(--cd-radius-sm); padding: 16px; margin-top: 8px; }
+    .price-line { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+    .price-line.total { font-weight: 700; font-size: 15px; border-top: 1px solid var(--cd-line); padding-top: 8px; margin-top: 4px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+    .mobile-overlay.active { display: block; }
+    .cd-sidebar .cd-sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--cd-line); margin-top: auto; }
+    .cd-sidebar .cd-sidebar-footer a { font-size: 12px; color: var(--cd-ink-soft); display: flex; align-items: center; gap: 8px; transition: color 0.2s ease; }
+    .cd-sidebar .cd-sidebar-footer a:hover { color: var(--cd-ink); }
+    .cd-sidebar .cd-sidebar-footer a svg { width: 14px; height: 14px; }
+    .room-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .room-detail-item label { font-size: 11px; color: var(--cd-ink-soft); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--cd-font-display); font-weight: 700; display: block; margin-bottom: 4px; }
+    .room-detail-item span { font-size: 14px; font-weight: 600; }
+    @media (max-width: 1024px) {
+      .hotel-content { margin-left: 0; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .rooms-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+      .form-grid { grid-template-columns: 1fr; }
+      .filters-bar { gap: 8px; }
+      .hotel-content { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .rooms-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="cd-skip-link">Saltar al contenido principal</a>
+
+  <div class="hotel-main">
+    <div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
+
+    <aside class="cd-sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="cd-sidebar-brand">
+        <span>HOTEL管理</span>
+      </div>
+      <nav class="cd-sidebar-nav" aria-label="Menú de navegación">
+        <button class="cd-sidebar-item active" data-view="dashboard" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </button>
+        <button class="cd-sidebar-item" data-view="habitaciones">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V7a2 2 0 012-2h6a2 2 0 012 2v14"/><path d="M13 21V11a2 2 0 012-2h4a2 2 0 012 2v10"/><path d="M3 21h18"/></svg>
+          Habitaciones
+        </button>
+        <button class="cd-sidebar-item" data-view="reservas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Reservas
+        </button>
+        <button class="cd-sidebar-item" data-view="huespedes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Huéspedes
+        </button>
+      </nav>
+      <div class="cd-sidebar-footer">
+        <a href="../index.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Volver al catálogo
+        </a>
+      </div>
+    </aside>
+
+    <main class="hotel-content" id="main-content" role="main">
+
+      <div class="hotel-topbar">
+        <button class="cd-hamburger" id="hamburgerBtn" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <h1 class="cd-title" id="viewTitle">Dashboard</h1>
+          <p class="cd-text-sm" id="viewSubtitle">Resumen general del hotel</p>
+        </div>
+      </div>
+
+      <!-- DASHBOARD VIEW -->
+      <section class="hotel-view active" id="view-dashboard" aria-label="Dashboard">
+        <div class="kpi-grid" aria-live="polite" id="kpiContainer"></div>
+
+        <div class="chart-area">
+          <div class="chart-title">Ocupación — Últimos 7 días</div>
+          <div class="bar-chart" id="barChart" role="img" aria-label="Gráfico de barras de ocupación de los últimos 7 días"></div>
+        </div>
+
+        <div class="upcoming-section">
+          <div class="section-header">
+            <h2 class="cd-subtitle">Check-ins de hoy</h2>
+            <span class="cd-badge cd-badge-info" id="checkinCount">0</span>
+          </div>
+          <div class="checkin-list" id="checkinList" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- HABITACIONES VIEW -->
+      <section class="hotel-view" id="view-habitaciones" aria-label="Habitaciones">
+        <div class="section-header">
+          <div class="cd-flex cd-gap-sm" style="flex-wrap:wrap;">
+            <button class="filter-chip active" data-room-filter="todas">Todas</button>
+            <button class="filter-chip" data-room-filter="disponible">Disponibles</button>
+            <button class="filter-chip" data-room-filter="ocupada">Ocupadas</button>
+            <button class="filter-chip" data-room-filter="mantenimiento">Mantenimiento</button>
+          </div>
+        </div>
+        <div class="rooms-grid" id="roomsGrid" aria-live="polite"></div>
+      </section>
+
+      <!-- RESERVAS VIEW -->
+      <section class="hotel-view" id="view-reservas" aria-label="Reservas">
+        <div class="filters-bar">
+          <div class="cd-search" style="flex:1;max-width:320px;">
+            <svg class="cd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" class="cd-search-input" id="searchReservas" placeholder="Buscar por huésped..." aria-label="Buscar reserva por nombre de huésped">
+          </div>
+          <div class="cd-flex cd-gap-sm" style="flex-wrap:wrap;">
+            <button class="filter-chip active" data-res-filter="todas">Todas</button>
+            <button class="filter-chip" data-res-filter="Confirmada">Confirmada</button>
+            <button class="filter-chip" data-res-filter="Pendiente">Pendiente</button>
+            <button class="filter-chip" data-res-filter="Cancelada">Cancelada</button>
+          </div>
+          <button class="cd-btn cd-btn-success cd-btn-sm" id="btnNewReserva" style="margin-left:auto;">+ Nueva Reserva</button>
+        </div>
+        <div class="cd-table-wrap">
+          <table class="cd-table" aria-label="Tabla de reservas">
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Huésped</th>
+                <th scope="col">Habitación</th>
+                <th scope="col">Check-in</th>
+                <th scope="col">Check-out</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reservasTableBody" aria-live="polite"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HUESPEDES VIEW -->
+      <section class="hotel-view" id="view-huespedes" aria-label="Huéspedes">
+        <div class="cd-table-wrap">
+          <table class="cd-table" aria-label="Tabla de huéspedes">
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Email</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col">Habitación actual</th>
+              </tr>
+            </thead>
+            <tbody id="huespedesTableBody" aria-live="polite"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- NEW RESERVATION MODAL -->
+  <div class="cd-modal-overlay" id="reservaModal" role="dialog" aria-modal="true" aria-labelledby="reservaModalTitle" aria-hidden="true">
+    <div class="cd-modal">
+      <div class="cd-modal-header">
+        <h2 class="cd-subtitle" id="reservaModalTitle">Nueva Reserva</h2>
+        <button class="cd-modal-close" aria-label="Cerrar modal" id="closeReservaModal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="cd-modal-body">
+        <form id="reservaForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="cd-label-form" for="resHuesped">Huésped</label>
+              <select class="cd-input cd-select" id="resHuesped" required aria-required="true">
+                <option value="">Seleccionar huésped...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="cd-label-form" for="resTipoHab">Tipo de habitación</label>
+              <select class="cd-input cd-select" id="resTipoHab" required aria-required="true">
+                <option value="Individual">Individual</option>
+                <option value="Doble">Doble</option>
+                <option value="Suite">Suite</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="cd-label-form" for="resHabitacion">Habitación</label>
+              <select class="cd-input cd-select" id="resHabitacion" required aria-required="true">
+                <option value="">Seleccionar...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="cd-label-form" for="resCheckin">Check-in</label>
+              <input type="date" class="cd-input" id="resCheckin" required aria-required="true">
+            </div>
+            <div class="form-group">
+              <label class="cd-label-form" for="resCheckout">Check-out</label>
+              <input type="date" class="cd-input" id="resCheckout" required aria-required="true">
+            </div>
+          </div>
+          <div class="price-summary" id="priceSummary" aria-live="polite">
+            <div class="price-line"><span>Noches</span><span id="nightsCount">0</span></div>
+            <div class="price-line"><span>Precio por noche</span><span id="nightPrice">$0</span></div>
+            <div class="price-line total"><span>Total</span><span id="totalPrice">$0</span></div>
+          </div>
+        </form>
+      </div>
+      <div class="cd-modal-footer">
+        <button class="cd-btn cd-btn-ghost" id="cancelReservaModal">Cancelar</button>
+        <button class="cd-btn cd-btn-success" id="saveReservaModal">Guardar Reserva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOM DETAIL MODAL -->
+  <div class="cd-modal-overlay" id="roomDetailModal" role="dialog" aria-modal="true" aria-labelledby="roomDetailTitle" aria-hidden="true">
+    <div class="cd-modal">
+      <div class="cd-modal-header">
+        <h2 class="cd-subtitle" id="roomDetailTitle">Detalle de Habitación</h2>
+        <button class="cd-modal-close" aria-label="Cerrar modal" id="closeRoomDetail">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="cd-modal-body">
+        <div class="room-detail-grid" id="roomDetailContent"></div>
+      </div>
+      <div class="cd-modal-footer">
+        <button class="cd-btn cd-btn-ghost" id="closeRoomDetailBtn">Cerrar</button>
+        <button class="cd-btn cd-btn-outline" id="toggleRoomStatus">Cambiar Estado</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="cd-toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      /* ─── Storage keys ─── */
+      const STORAGE_KEY = 'hotel_panel_data';
+
+      /* ─── Default data ─── */
+      const DEFAULT_DATA = {
+        rooms: [
+          { id: 1, number: '101', type: 'Individual', status: 'disponible', price: 120000 },
+          { id: 2, number: '102', type: 'Individual', status: 'ocupada', price: 120000 },
+          { id: 3, number: '103', type: 'Doble', status: 'disponible', price: 180000 },
+          { id: 4, number: '104', type: 'Doble', status: 'ocupada', price: 180000 },
+          { id: 5, number: '105', type: 'Doble', status: 'mantenimiento', price: 180000 },
+          { id: 6, number: '106', type: 'Suite', status: 'disponible', price: 320000 },
+          { id: 7, number: '107', type: 'Individual', status: 'ocupada', price: 120000 },
+          { id: 8, number: '108', type: 'Doble', status: 'disponible', price: 180000 },
+          { id: 9, number: '109', type: 'Suite', status: 'ocupada', price: 320000 },
+          { id: 10, number: '110', type: 'Individual', status: 'disponible', price: 120000 },
+          { id: 11, number: '111', type: 'Doble', status: 'ocupada', price: 180000 },
+          { id: 12, number: '112', type: 'Suite', status: 'disponible', price: 320000 }
+        ],
+        guests: [
+          { id: 1, name: 'Carlos Andrés Martínez', document: '1023456789', email: 'carlos.martinez@email.com', phone: '+57 310 234 5678' },
+          { id: 2, name: 'María Fernanda López', document: '1098765432', email: 'maria.lopez@email.com', phone: '+57 315 876 5432' },
+          { id: 3, name: 'Juan David Ramírez', document: '1122334455', email: 'juan.ramirez@email.com', phone: '+57 320 111 2233' },
+          { id: 4, name: 'Laura Valentina García', document: '1033445566', email: 'laura.garcia@email.com', phone: '+57 301 445 5667' },
+          { id: 5, name: 'Andrés Felipe Herrera', document: '1044556677', email: 'andres.herrera@email.com', phone: '+57 318 778 8990' },
+          { id: 6, name: 'Daniela Alejandra Rojas', document: '1055667788', email: 'daniela.rojas@email.com', phone: '+57 312 334 4556' }
+        ],
+        reservations: [
+          { id: 1, code: 'RES-001', guestId: 1, roomId: 2, checkin: '2026-07-22', checkout: '2026-07-25', status: 'Confirmada' },
+          { id: 2, code: 'RES-002', guestId: 2, roomId: 4, checkin: '2026-07-22', checkout: '2026-07-24', status: 'Confirmada' },
+          { id: 3, code: 'RES-003', guestId: 3, roomId: 7, checkin: '2026-07-22', checkout: '2026-07-28', status: 'Confirmada' },
+          { id: 4, code: 'RES-004', guestId: 4, roomId: 9, checkin: '2026-07-23', checkout: '2026-07-26', status: 'Pendiente' },
+          { id: 5, code: 'RES-005', guestId: 5, roomId: 11, checkin: '2026-07-24', checkout: '2026-07-27', status: 'Cancelada' }
+        ],
+        nextResId: 6
+      };
+
+      /* ─── Helpers ─── */
+      function loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch (e) { /* ignore */ }
+        return JSON.parse(JSON.stringify(DEFAULT_DATA));
+      }
+
+      function saveData() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+      }
+
+      function formatCOP(v) {
+        return '$' + v.toLocaleString('es-CO');
+      }
+
+      function formatDate(d) {
+        if (!d) return '—';
+        const parts = d.split('-');
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+      }
+
+      function daysBetween(a, b) {
+        const da = new Date(a + 'T00:00:00');
+        const db = new Date(b + 'T00:00:00');
+        return Math.max(0, Math.round((db - da) / 86400000));
+      }
+
+      function todayStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      }
+
+      function getGuest(id) { return data.guests.find(g => g.id === id); }
+      function getRoom(id) { return data.rooms.find(r => r.id === id); }
+
+      function showToast(msg, type) {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = 'cd-toast cd-toast-' + (type || 'success');
+        const icon = type === 'error'
+          ? '<svg class="cd-toast-icon" viewBox="0 0 24 24" fill="none" stroke="#EA4335" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+          : '<svg class="cd-toast-icon" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        t.innerHTML = icon + '<span>' + msg + '</span>';
+        c.appendChild(t);
+        setTimeout(function() {
+          t.style.animation = 'cd-toast-out 0.3s ease forwards';
+          setTimeout(function() { t.remove(); }, 300);
+        }, 3000);
+      }
+
+      /* ─── State ─── */
+      var data = loadData();
+      var currentView = 'dashboard';
+      var currentRoomFilter = 'todas';
+      var currentResFilter = 'todas';
+      var selectedRoomId = null;
+
+      /* ─── Navigation ─── */
+      var sidebarItems = document.querySelectorAll('.cd-sidebar-item');
+      var views = document.querySelectorAll('.hotel-view');
+      var viewTitles = { dashboard: ['Dashboard', 'Resumen general del hotel'], habitaciones: ['Habitaciones', 'Gestión de habitaciones del hotel'], reservas: ['Reservas', 'Administrar reservaciones'], huespedes: ['Huéspedes', 'Registro de huéspedes'] };
+
+      function switchView(view) {
+        currentView = view;
+        sidebarItems.forEach(function(item) {
+          const active = item.dataset.view === view;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-current', active ? 'page' : 'false');
+        });
+        views.forEach(function(v) { v.classList.toggle('active', v.id === 'view-' + view); });
+        document.getElementById('viewTitle').textContent = viewTitles[view][0];
+        document.getElementById('viewSubtitle').textContent = viewTitles[view][1];
+        closeSidebar();
+      }
+
+      sidebarItems.forEach(function(item) {
+        item.addEventListener('click', function() { switchView(item.dataset.view); });
+      });
+
+      /* ─── Sidebar mobile ─── */
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('mobileOverlay');
+      var hamburger = document.getElementById('hamburgerBtn');
+
+      function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
+
+      hamburger.addEventListener('click', function() {
+        const isOpen = sidebar.classList.toggle('open');
+        overlay.classList.toggle('active', isOpen);
+        overlay.setAttribute('aria-hidden', String(!isOpen));
+        hamburger.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      overlay.addEventListener('click', closeSidebar);
+
+      /* ─── Dashboard ─── */
+      function renderDashboard() {
+        const today = todayStr();
+        const occupied = data.rooms.filter(r => r.status === 'ocupada').length;
+        const available = data.rooms.filter(r => r.status === 'disponible').length;
+        const totalRooms = data.rooms.length;
+        const occupancyPct = Math.round((occupied / totalRooms) * 100);
+        const todayCheckouts = data.reservations.filter(r => r.checkout === today && r.status === 'Confirmada').length;
+        const monthRevenue = data.reservations.filter(r => r.status === 'Confirmada').reduce(function(sum, r) {
+          const room = getRoom(r.roomId);
+          const nights = daysBetween(r.checkin, r.checkout);
+          return sum + (room ? room.price * nights : 0);
+        }, 0);
+
+        document.getElementById('kpiContainer').innerHTML =
+          '<div class="cd-kpi"><div class="cd-kpi-label">Ocupación actual</div><div class="cd-kpi-value">' + occupancyPct + '%</div><div class="cd-progress" style="margin-top:8px;"><div class="cd-progress-bar ' + (occupancyPct > 80 ? 'red' : occupancyPct > 50 ? 'yellow' : 'green') + '" style="width:' + occupancyPct + '%"></div></div></div>' +
+          '<div class="cd-kpi"><div class="cd-kpi-label">Habitaciones disponibles</div><div class="cd-kpi-value">' + available + '</div><div class="cd-kpi-change positive">de ' + totalRooms + ' total</div></div>' +
+          '<div class="cd-kpi"><div class="cd-kpi-label">Ingresos del mes</div><div class="cd-kpi-value" style="font-size:22px;">' + formatCOP(monthRevenue) + '</div><div class="cd-kpi-change positive">↑ reservas activas</div></div>' +
+          '<div class="cd-kpi"><div class="cd-kpi-label">Check-outs hoy</div><div class="cd-kpi-value">' + todayCheckouts + '</div><div class="cd-kpi-change">' + formatDate(today) + '</div></div>';
+
+        /* Bar chart */
+        var chartHtml = '';
+        for (var i = 6; i >= 0; i--) {
+          var d = new Date();
+          d.setDate(d.getDate() - i);
+          var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+          var dayOccupied = data.reservations.filter(function(r) {
+            return r.status === 'Confirmada' && r.checkin <= ds && r.checkout > ds;
+          }).length;
+          var pct = Math.round((dayOccupied / totalRooms) * 100);
+          var color = pct > 80 ? '#EA4335' : pct > 50 ? '#FBBC04' : '#25D366';
+          var dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+          chartHtml += '<div class="bar-col"><div class="bar-value">' + pct + '%</div><div class="bar-fill" style="height:' + Math.max(pct, 4) + '%;background:' + color + ';"></div><div class="bar-label">' + dayNames[d.getDay()] + '</div></div>';
+        }
+        document.getElementById('barChart').innerHTML = chartHtml;
+
+        /* Check-ins today */
+        var todayCheckins = data.reservations.filter(function(r) {
+          return r.checkin === today && r.status === 'Confirmada';
+        });
+        document.getElementById('checkinCount').textContent = todayCheckins.length;
+        if (todayCheckins.length === 0) {
+          document.getElementById('checkinList').innerHTML = '<div class="cd-text" style="padding:16px;text-align:center;">No hay check-ins programados para hoy</div>';
+        } else {
+          var listHtml = '';
+          todayCheckins.forEach(function(r) {
+            var g = getGuest(r.guestId);
+            var room = getRoom(r.roomId);
+            var initials = g ? g.name.split(' ').map(function(w){return w[0];}).slice(0,2).join('') : '??';
+            listHtml += '<div class="checkin-item"><div class="checkin-avatar">' + initials + '</div><div class="checkin-info"><div class="checkin-name">' + (g ? g.name : 'N/A') + '</div><div class="checkin-detail">Hab. ' + (room ? room.number : '—') + ' · ' + (room ? room.type : '') + ' · Check-out: ' + formatDate(r.checkout) + '</div></div><span class="cd-badge cd-badge-success"><span class="cd-badge-dot"></span>Check-in hoy</span></div>';
+          });
+          document.getElementById('checkinList').innerHTML = listHtml;
+        }
+      }
+
+      /* ─── Habitaciones ─── */
+      function renderRooms() {
+        var grid = document.getElementById('roomsGrid');
+        var filtered = data.rooms;
+        if (currentRoomFilter !== 'todas') {
+          filtered = data.rooms.filter(function(r) { return r.status === currentRoomFilter; });
+        }
+        if (filtered.length === 0) {
+          grid.innerHTML = '<div class="cd-text" style="grid-column:1/-1;text-align:center;padding:40px;">No hay habitaciones con este estado</div>';
+          return;
+        }
+        grid.innerHTML = filtered.map(function(r) {
+          var statusLabel = r.status === 'disponible' ? 'Disponible' : r.status === 'ocupada' ? 'Ocupada' : 'Mantenimiento';
+          return '<div class="room-card status-' + r.status + '" data-room-id="' + r.id + '" tabindex="0" role="button" aria-label="Habitación ' + r.number + ', ' + r.type + ', estado ' + statusLabel + '"><div class="room-number">' + r.number + '</div><div class="room-type">' + r.type + '</div><div class="room-status-badge ' + r.status + '"><span class="cd-badge-dot"></span>' + statusLabel + '</div><div class="room-price">' + formatCOP(r.price) + ' / noche</div></div>';
+        }).join('');
+
+        grid.querySelectorAll('.room-card').forEach(function(card) {
+          card.addEventListener('click', function() { openRoomDetail(parseInt(card.dataset.roomId)); });
+          card.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRoomDetail(parseInt(card.dataset.roomId)); } });
+        });
+      }
+
+      document.querySelectorAll('[data-room-filter]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('[data-room-filter]').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          currentRoomFilter = btn.dataset.roomFilter;
+          renderRooms();
+        });
+      });
+
+      /* Room detail modal */
+      function openRoomDetail(roomId) {
+        selectedRoomId = roomId;
+        var room = getRoom(roomId);
+        if (!room) return;
+        var statusLabel = room.status === 'disponible' ? 'Disponible' : room.status === 'ocupada' ? 'Ocupada' : 'Mantenimiento';
+        var statusColor = room.status === 'disponible' ? '#25D366' : room.status === 'ocupada' ? '#EA4335' : '#FBBC04';
+        var res = data.reservations.find(function(r) { return r.roomId === roomId && r.status === 'Confirmada'; });
+        var guestName = '—';
+        if (res) { var g = getGuest(res.guestId); guestName = g ? g.name : '—'; }
+
+        document.getElementById('roomDetailTitle').textContent = 'Habitación ' + room.number;
+        document.getElementById('roomDetailContent').innerHTML =
+          '<div class="room-detail-item"><label>Número</label><span>' + room.number + '</span></div>' +
+          '<div class="room-detail-item"><label>Tipo</label><span>' + room.type + '</span></div>' +
+          '<div class="room-detail-item"><label>Estado</label><span style="color:' + statusColor + '">' + statusLabel + '</span></div>' +
+          '<div class="room-detail-item"><label>Precio / noche</label><span>' + formatCOP(room.price) + '</span></div>' +
+          '<div class="room-detail-item full" style="grid-column:1/-1;"><label>Huésped actual</label><span>' + guestName + '</span></div>';
+
+        var toggleBtn = document.getElementById('toggleRoomStatus');
+        toggleBtn.textContent = room.status === 'disponible' ? 'Marcar Ocupada' : room.status === 'ocupada' ? 'Marcar Disponible' : 'Marcar Disponible';
+
+        var modal = document.getElementById('roomDetailModal');
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      document.getElementById('closeRoomDetail').addEventListener('click', closeRoomDetail);
+      document.getElementById('closeRoomDetailBtn').addEventListener('click', closeRoomDetail);
+
+      function closeRoomDetail() {
+        var modal = document.getElementById('roomDetailModal');
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        selectedRoomId = null;
+      }
+
+      document.getElementById('toggleRoomStatus').addEventListener('click', function() {
+        if (selectedRoomId === null) return;
+        var room = getRoom(selectedRoomId);
+        if (!room) return;
+        if (room.status === 'ocupada') {
+          room.status = 'disponible';
+        } else if (room.status === 'disponible') {
+          room.status = 'ocupada';
+        } else {
+          room.status = 'disponible';
+        }
+        saveData();
+        closeRoomDetail();
+        renderRooms();
+        renderDashboard();
+        showToast('Estado de habitación ' + room.number + ' actualizado');
+      });
+
+      /* ─── Reservas ─── */
+      function renderReservas() {
+        var tbody = document.getElementById('reservasTableBody');
+        var search = document.getElementById('searchReservas').value.toLowerCase();
+        var filtered = data.reservations;
+        if (currentResFilter !== 'todas') {
+          filtered = filtered.filter(function(r) { return r.status === currentResFilter; });
+        }
+        if (search) {
+          filtered = filtered.filter(function(r) {
+            var g = getGuest(r.guestId);
+            return g && g.name.toLowerCase().indexOf(search) !== -1;
+          });
+        }
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--cd-ink-soft);">No se encontraron reservas</td></tr>';
+          return;
+        }
+        tbody.innerHTML = filtered.map(function(r) {
+          var g = getGuest(r.guestId);
+          var room = getRoom(r.roomId);
+          var badgeClass = r.status === 'Confirmada' ? 'badge-confirmada' : r.status === 'Pendiente' ? 'badge-pendiente' : 'badge-cancelada';
+          var actions = '';
+          if (r.status === 'Pendiente') {
+            actions = '<button class="cd-btn cd-btn-sm cd-btn-success confirm-res" data-id="' + r.id + '">Confirmar</button>';
+          } else if (r.status === 'Confirmada') {
+            actions = '<button class="cd-btn cd-btn-sm cd-btn-danger cancel-res" data-id="' + r.id + '">Cancelar</button>';
+          }
+          return '<tr><td><span class="cd-label">' + r.code + '</span></td><td>' + (g ? g.name : 'N/A') + '</td><td>' + (room ? room.number + ' (' + room.type + ')' : '—') + '</td><td>' + formatDate(r.checkin) + '</td><td>' + formatDate(r.checkout) + '</td><td><span class="cd-badge ' + badgeClass + '">' + r.status + '</span></td><td class="table-actions">' + actions + '</td></tr>';
+        }).join('');
+
+        tbody.querySelectorAll('.confirm-res').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var res = data.reservations.find(function(r) { return r.id === parseInt(btn.dataset.id); });
+            if (res) {
+              res.status = 'Confirmada';
+              var room = getRoom(res.roomId);
+              if (room) { room.status = 'ocupada'; }
+              saveData();
+              renderReservas();
+              renderRooms();
+              renderDashboard();
+              showToast('Reserva ' + res.code + ' confirmada');
+            }
+          });
+        });
+
+        tbody.querySelectorAll('.cancel-res').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var res = data.reservations.find(function(r) { return r.id === parseInt(btn.dataset.id); });
+            if (res) {
+              res.status = 'Cancelada';
+              var room = getRoom(res.roomId);
+              if (room) { room.status = 'disponible'; }
+              saveData();
+              renderReservas();
+              renderRooms();
+              renderDashboard();
+              showToast('Reserva ' + res.code + ' cancelada', 'error');
+            }
+          });
+        });
+      }
+
+      document.querySelectorAll('[data-res-filter]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('[data-res-filter]').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          currentResFilter = btn.dataset.resFilter;
+          renderReservas();
+        });
+      });
+
+      document.getElementById('searchReservas').addEventListener('input', renderReservas);
+
+      /* ─── Huéspedes ─── */
+      function renderHuespedes() {
+        var tbody = document.getElementById('huespedesTableBody');
+        tbody.innerHTML = data.guests.map(function(g) {
+          var res = data.reservations.find(function(r) { return r.guestId === g.id && r.status === 'Confirmada'; });
+          var roomNum = '—';
+          if (res) { var room = getRoom(res.roomId); roomNum = room ? room.number + ' (' + room.type + ')' : '—'; }
+          return '<tr><td><strong>' + g.name + '</strong></td><td><span class="cd-label">' + g.document + '</span></td><td>' + g.email + '</td><td>' + g.phone + '</td><td>' + roomNum + '</td></tr>';
+        }).join('');
+      }
+
+      /* ─── New Reservation Modal ─── */
+      var reservaModal = document.getElementById('reservaModal');
+      var resHuesped = document.getElementById('resHuesped');
+      var resTipoHab = document.getElementById('resTipoHab');
+      var resHabitacion = document.getElementById('resHabitacion');
+      var resCheckin = document.getElementById('resCheckin');
+      var resCheckout = document.getElementById('resCheckout');
+
+      function populateGuestDropdown() {
+        resHuesped.innerHTML = '<option value="">Seleccionar huésped...</option>';
+        data.guests.forEach(function(g) {
+          resHuesped.innerHTML += '<option value="' + g.id + '">' + g.name + '</option>';
+        });
+      }
+
+      function populateRoomDropdown() {
+        var tipo = resTipoHab.value;
+        var available = data.rooms.filter(function(r) {
+          return r.type === tipo && r.status === 'disponible';
+        });
+        resHabitacion.innerHTML = '<option value="">Seleccionar...</option>';
+        available.forEach(function(r) {
+          resHabitacion.innerHTML += '<option value="' + r.id + '">' + r.number + ' - ' + formatCOP(r.price) + '/noche</option>';
+        });
+        updatePriceSummary();
+      }
+
+      function updatePriceSummary() {
+        var nights = 0;
+        var price = 0;
+        if (resCheckin.value && resCheckout.value) {
+          nights = daysBetween(resCheckin.value, resCheckout.value);
+        }
+        if (resHabitacion.value) {
+          var room = getRoom(parseInt(resHabitacion.value));
+          if (room) price = room.price;
+        }
+        document.getElementById('nightsCount').textContent = nights;
+        document.getElementById('nightPrice').textContent = formatCOP(price);
+        document.getElementById('totalPrice').textContent = formatCOP(nights * price);
+      }
+
+      resTipoHab.addEventListener('change', populateRoomDropdown);
+      resCheckin.addEventListener('change', updatePriceSummary);
+      resCheckout.addEventListener('change', updatePriceSummary);
+      resHabitacion.addEventListener('change', updatePriceSummary);
+
+      function openReservaModal() {
+        populateGuestDropdown();
+        populateRoomDropdown();
+        var tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        var dayAfter = new Date();
+        dayAfter.setDate(dayAfter.getDate() + 3);
+        resCheckin.value = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth()+1).padStart(2,'0') + '-' + String(tomorrow.getDate()).padStart(2,'0');
+        resCheckout.value = dayAfter.getFullYear() + '-' + String(dayAfter.getMonth()+1).padStart(2,'0') + '-' + String(dayAfter.getDate()).padStart(2,'0');
+        updatePriceSummary();
+        document.getElementById('reservaModalTitle').textContent = 'Nueva Reserva';
+        reservaModal.classList.add('active');
+        reservaModal.setAttribute('aria-hidden', 'false');
+        resHuesped.focus();
+      }
+
+      function closeReservaModal() {
+        reservaModal.classList.remove('active');
+        reservaModal.setAttribute('aria-hidden', 'true');
+        document.getElementById('reservaForm').reset();
+      }
+
+      document.getElementById('btnNewReserva').addEventListener('click', openReservaModal);
+      document.getElementById('closeReservaModal').addEventListener('click', closeReservaModal);
+      document.getElementById('cancelReservaModal').addEventListener('click', closeReservaModal);
+
+      document.getElementById('saveReservaModal').addEventListener('click', function() {
+        if (!resHuesped.value) { showToast('Selecciona un huésped', 'error'); return; }
+        if (!resHabitacion.value) { showToast('Selecciona una habitación', 'error'); return; }
+        if (!resCheckin.value || !resCheckout.value) { showToast('Selecciona las fechas', 'error'); return; }
+        var nights = daysBetween(resCheckin.value, resCheckout.value);
+        if (nights <= 0) { showToast('La fecha de check-out debe ser posterior al check-in', 'error'); return; }
+
+        var code = 'RES-' + String(data.nextResId).padStart(3, '0');
+        data.nextResId++;
+        data.reservations.push({
+          id: data.nextResId - 1,
+          code: code,
+          guestId: parseInt(resHuesped.value),
+          roomId: parseInt(resHabitacion.value),
+          checkin: resCheckin.value,
+          checkout: resCheckout.value,
+          status: 'Pendiente'
+        });
+
+        var room = getRoom(parseInt(resHabitacion.value));
+        if (room) room.status = 'mantenimiento';
+
+        saveData();
+        closeReservaModal();
+        renderReservas();
+        renderRooms();
+        renderDashboard();
+        renderHuespedes();
+        showToast('Reserva ' + code + ' creada exitosamente');
+      });
+
+      /* Close modals on overlay click */
+      document.querySelectorAll('.cd-modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+          }
+        });
+      });
+
+      /* Close modals on Escape */
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.cd-modal-overlay.active').forEach(function(m) {
+            m.classList.remove('active');
+            m.setAttribute('aria-hidden', 'true');
+          });
+        }
+      });
+
+      /* ─── Init ─── */
+      renderDashboard();
+      renderRooms();
+      renderReservas();
+      renderHuespedes();
+
+    })();
+  </script>
+</body>
+</html>
