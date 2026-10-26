@@ -206,17 +206,19 @@
       text-transform: uppercase;
       color: var(--ink-soft);
       margin: 0 0 20px;
-      padding-right: 88px;
+      padding-right: 168px;
     }
 
-    .card-copiar {
+    .card-copiar,
+    .card-wa {
       position: absolute;
       top: 12px;
-      right: 12px;
       z-index: 2;
       padding: 6px 12px;
       font-size: 11px;
     }
+    .card-copiar { right: 12px; }
+    .card-wa { right: 88px; }
 
     .card-mensaje-texto {
       font-size: 15px;
@@ -937,6 +939,13 @@
       return String(departamento || '').trim().toLowerCase() === 'santander';
     }
 
+    function propuestaBorrador(registro) {
+      const r = registro || {};
+      const nombre = String(r.nombre || 'su negocio').trim();
+      const tipo = String(r.tipo || 'su tipo de negocio').trim();
+      return 'Para ' + nombre + ', como ' + tipo + ', podemos dejarle una herramienta digital a la medida (pedidos, agenda, inventario o lo que más les quite tiempo), con una prueba gratis de una a dos semanas para que usted y su equipo vean cómo funciona.';
+    }
+
     function bloquesMensaje(registro) {
       const r = registro || {};
       const bloques = [
@@ -949,8 +958,13 @@
       bloques.push({ tipo: 'oferta' });
       if (r.oferta === 'no') {
         bloques.push({ titulo: 'Mensaje de agradecimiento', texto: TEXTOS.agradecimiento });
+        return bloques;
       }
-      bloques.push({ titulo: 'Propuesta', texto: String(r.propuesta || '').trim(), editable: true });
+      bloques.push({
+        titulo: 'Propuesta',
+        texto: String(r.propuesta || '').trim(),
+        editable: true
+      });
       bloques.push({ titulo: 'Prueba', texto: TEXTOS.prueba });
       bloques.push({
         titulo: 'Agenda',
@@ -1028,6 +1042,12 @@
       guardarDatos();
     }
 
+    function numeroWhatsApp(tel) {
+      let d = String(tel || '').replace(/\D/g, '');
+      if (d.length === 10) d = '57' + d;
+      return d;
+    }
+
     function botonCopiarBloque(card, obtenerTexto) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -1037,6 +1057,41 @@
         copiarTexto(textoHastaUltimoPunto(obtenerTexto()), $('mensaje-detalle'));
       });
       card.appendChild(btn);
+    }
+
+    function botonWhatsApp(card, obtenerTexto, telefono) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost card-wa';
+      btn.textContent = 'WhatsApp';
+      btn.addEventListener('click', () => {
+        const n = numeroWhatsApp(telefono);
+        const t = textoHastaUltimoPunto(obtenerTexto());
+        const msg = $('mensaje-detalle');
+        if (!n || n.length < 11) {
+          if (msg) {
+            msg.classList.remove('ok');
+            msg.classList.add('error');
+            msg.textContent = 'Falta un teléfono válido para WhatsApp.';
+          }
+          return;
+        }
+        if (!t) {
+          if (msg) {
+            msg.classList.remove('ok');
+            msg.classList.add('error');
+            msg.textContent = 'El mensaje está vacío.';
+          }
+          return;
+        }
+        window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(t), '_blank', 'noopener');
+      });
+      card.appendChild(btn);
+    }
+
+    function accionesMensaje(card, obtenerTexto, telefono) {
+      botonWhatsApp(card, obtenerTexto, telefono);
+      botonCopiarBloque(card, obtenerTexto);
     }
 
     function generarMensaje(conocimientos, contacto, extra) {
@@ -1511,14 +1566,68 @@
 
       cont.appendChild(cardDatos);
 
-      if (cliente.clientesSi === 'si') {
-        const cardProp = cardConTitulo('Propuesta');
-        const areaProp = areaNotas('detalle-propuesta', cliente.propuesta, 'Campo vacío listo para llenar (propuesta según el tipo de negocio).');
-        cardProp.append(areaProp, botonGuardarNotas('Guardar propuesta', guardarPropuestaDetalle));
-        botonCopiarBloque(cardProp, () => areaProp.value);
-        cont.appendChild(cardProp);
+      bloquesMensaje(cliente).forEach(bloque => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        if (bloque.tipo === 'oferta') {
+          const fila = document.createElement('div');
+          fila.className = 'fila';
+          const lab = document.createElement('label');
+          lab.setAttribute('for', 'detalle-oferta');
+          lab.textContent = '¿Quiere conocer la oferta?';
+          const campo = document.createElement('div');
+          campo.className = 'campo';
+          const sel = document.createElement('select');
+          sel.id = 'detalle-oferta';
+          sel.innerHTML = '<option value="">— Seleccionar —</option><option value="si">Sí</option><option value="no">No</option>';
+          sel.value = cliente.oferta || '';
+          sel.addEventListener('change', guardarOfertaDetalle);
+          campo.appendChild(sel);
+          fila.append(lab, campo);
+          card.appendChild(fila);
+          cont.appendChild(card);
+          return;
+        }
+        const tit = document.createElement('h2');
+        tit.className = 'card-title';
+        tit.textContent = bloque.titulo;
+        card.appendChild(tit);
+        if (bloque.editable) {
+          const area = document.createElement('textarea');
+          area.id = 'detalle-propuesta';
+          area.rows = 4;
+          area.style.width = '100%';
+          area.placeholder = 'Campo vacío listo para llenar (propuesta según el tipo de negocio).';
+          area.value = bloque.texto || '';
+          const btnGen = document.createElement('button');
+          btnGen.type = 'button';
+          btnGen.className = 'btn btn-ghost';
+          btnGen.style.marginTop = '10px';
+          btnGen.textContent = 'Generar propuesta';
+          btnGen.addEventListener('click', () => {
+            area.value = propuestaBorrador(cliente);
+          });
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-ghost';
+          btn.style.marginTop = '10px';
+          btn.style.marginLeft = '8px';
+          btn.textContent = 'Guardar propuesta';
+          btn.addEventListener('click', guardarPropuestaDetalle);
+          card.append(area, btnGen, btn);
+          accionesMensaje(card, () => area.value, cliente.telefono);
+        } else {
+          const p = document.createElement('p');
+          p.className = 'card-mensaje-texto';
+          p.textContent = bloque.texto;
+          card.appendChild(p);
+          accionesMensaje(card, () => p.textContent, cliente.telefono);
+        }
+        cont.appendChild(card);
+      });
 
-        const cardAgenda = cardConTitulo('Agenda');
+      if (cliente.clientesSi === 'si') {
+        const cardAgenda = cardConTitulo('¿Eligió la agenda?');
         cardAgenda.appendChild(filaSiNo('detalle-eligio-agenda', '¿Eligió la agenda?', cliente.eligioAgenda, () => {
           guardarCampoCliente({ eligioAgenda: $('detalle-eligio-agenda').value });
         }));
@@ -1529,7 +1638,7 @@
         cardAgendaComo.append(agendaComo, botonGuardarNotas('Guardar', () => {
           guardarCampoCliente({ agendaComo: agendaComo.value.trim() });
         }));
-        botonCopiarBloque(cardAgendaComo, () => agendaComo.value);
+        accionesMensaje(cardAgendaComo, () => agendaComo.value, cliente.telefono);
         cont.appendChild(cardAgendaComo);
 
         const cardAgendaTiempos = cardConTitulo('Tiempos de la agenda');
@@ -1537,10 +1646,10 @@
         cardAgendaTiempos.append(agendaTiempos, botonGuardarNotas('Guardar', () => {
           guardarCampoCliente({ agendaTiempos: agendaTiempos.value.trim() });
         }));
-        botonCopiarBloque(cardAgendaTiempos, () => agendaTiempos.value);
+        accionesMensaje(cardAgendaTiempos, () => agendaTiempos.value, cliente.telefono);
         cont.appendChild(cardAgendaTiempos);
 
-        const cardPrueba = cardConTitulo('Prueba');
+        const cardPrueba = cardConTitulo('¿Eligió la prueba gratis?');
         cardPrueba.appendChild(filaSiNo('detalle-eligio-prueba', '¿Eligió la prueba gratis?', cliente.eligioPrueba, () => {
           guardarCampoCliente({ eligioPrueba: $('detalle-eligio-prueba').value });
         }));
@@ -1551,7 +1660,7 @@
         cardPruebaComo.append(pruebaComo, botonGuardarNotas('Guardar', () => {
           guardarCampoCliente({ pruebaComo: pruebaComo.value.trim() });
         }));
-        botonCopiarBloque(cardPruebaComo, () => pruebaComo.value);
+        accionesMensaje(cardPruebaComo, () => pruebaComo.value, cliente.telefono);
         cont.appendChild(cardPruebaComo);
 
         const cardPruebaTiempos = cardConTitulo('Tiempos de la prueba');
@@ -1559,59 +1668,8 @@
         cardPruebaTiempos.append(pruebaTiempos, botonGuardarNotas('Guardar', () => {
           guardarCampoCliente({ pruebaTiempos: pruebaTiempos.value.trim() });
         }));
-        botonCopiarBloque(cardPruebaTiempos, () => pruebaTiempos.value);
+        accionesMensaje(cardPruebaTiempos, () => pruebaTiempos.value, cliente.telefono);
         cont.appendChild(cardPruebaTiempos);
-      } else {
-        bloquesMensaje(cliente).forEach(bloque => {
-          const card = document.createElement('div');
-          card.className = 'card';
-          if (bloque.tipo === 'oferta') {
-            const fila = document.createElement('div');
-            fila.className = 'fila';
-            const lab = document.createElement('label');
-            lab.setAttribute('for', 'detalle-oferta');
-            lab.textContent = '¿Quiere conocer la oferta?';
-            const campo = document.createElement('div');
-            campo.className = 'campo';
-            const sel = document.createElement('select');
-            sel.id = 'detalle-oferta';
-            sel.innerHTML = '<option value="">— Seleccionar —</option><option value="si">Sí</option><option value="no">No</option>';
-            sel.value = cliente.oferta || '';
-            sel.addEventListener('change', guardarOfertaDetalle);
-            campo.appendChild(sel);
-            fila.append(lab, campo);
-            card.appendChild(fila);
-            cont.appendChild(card);
-            return;
-          }
-          const tit = document.createElement('h2');
-          tit.className = 'card-title';
-          tit.textContent = bloque.titulo;
-          card.appendChild(tit);
-          if (bloque.editable) {
-            const area = document.createElement('textarea');
-            area.id = 'detalle-propuesta';
-            area.rows = 4;
-            area.style.width = '100%';
-            area.placeholder = 'Campo vacío listo para llenar (propuesta según el tipo de negocio).';
-            area.value = bloque.texto || '';
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn btn-ghost';
-            btn.style.marginTop = '10px';
-            btn.textContent = 'Guardar propuesta';
-            btn.addEventListener('click', guardarPropuestaDetalle);
-            card.append(area, btn);
-            botonCopiarBloque(card, () => area.value);
-          } else {
-            const p = document.createElement('p');
-            p.className = 'card-mensaje-texto';
-            p.textContent = bloque.texto;
-            card.appendChild(p);
-            botonCopiarBloque(card, () => p.textContent);
-          }
-          cont.appendChild(card);
-        });
       }
 
       const btnPasar = $('btn-pasar-cliente');
