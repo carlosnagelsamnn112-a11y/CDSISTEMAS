@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torneos</title>
+<meta name="description" content="Torneos de tenis. Vista de público y panel de administración.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F4F5F7;
+  --card: #FFFFFF;
+  --text: #1A1D21;
+  --muted: #6B7280;
+  --line: #E6E8EC;
+  --accent: #2563EB;
+  --accent-soft: #EFF4FF;
+  --ok: #059669;
+  --ok-soft: #ECFDF5;
+  --live: #DC2626;
+  --live-soft: #FEF2F2;
+  --wait: #F3F4F6;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --font: "DM Sans", system-ui, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
+
+.mode-switch {
+  position: fixed; top: 14px; right: 16px; z-index: 50;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.mode-switch:hover { border-color: #C5CAD3; }
+body.modo-admin .mode-switch { background: var(--text); color: #fff; border-color: var(--text); }
+
+.wrap { width: min(960px, calc(100% - 40px)); margin-inline: auto; }
+
+#shell-cliente { min-height: 100vh; padding-bottom: 48px; }
+body.modo-admin #shell-cliente { display: none; }
+
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 0 8px; padding-right: 110px;
+}
+.logo { font-weight: 700; font-size: 18px; letter-spacing: -0.03em; }
+.logo span { color: var(--accent); }
+.meta { font-size: 13px; color: var(--muted); }
+
+.hero { padding: 28px 0 8px; }
+.hero h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; }
+.hero p { margin-top: 8px; color: var(--muted); max-width: 42ch; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.pill {
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 12px; font-size: 13px; color: var(--muted);
+}
+.pill b { color: var(--text); font-weight: 600; }
+
+h2 { font-size: 16px; font-weight: 600; margin: 28px 0 12px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--live);
+}
+.tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--live); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+.row.win { font-weight: 600; }
+.score { display: flex; gap: 8px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.row.win .score { color: var(--text); }
+
+.steps { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.step h3 { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.mini {
+  background: var(--bg); border-radius: 12px; padding: 12px; margin-bottom: 8px;
+}
+.mini strong { display: block; font-size: 14px; }
+.mini small { color: var(--muted); font-size: 12px; }
+.mini.final { background: var(--accent-soft); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td:first-child { color: var(--muted); width: 36px; }
+
+.foot { margin-top: 36px; font-size: 12px; color: var(--muted); }
+
+/* Admin */
+#shell-admin { display: none; }
+body.modo-admin #shell-admin {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+.side {
+  background: var(--card);
+  border-right: 1px solid var(--line);
+  padding: 24px 16px;
+}
+.side .logo { margin-bottom: 24px; }
+.side button {
+  display: block; width: 100%; text-align: left;
+  background: none; border: 0; border-radius: 10px;
+  padding: 10px 12px; color: var(--muted); font-size: 14px; font-weight: 500;
+}
+.side button:hover { background: var(--bg); color: var(--text); }
+.side button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.main { padding: 28px 32px 48px; padding-top: 56px; }
+.main h1 { font-size: 24px; letter-spacing: -0.03em; }
+.main .sub { color: var(--muted); font-size: 14px; margin: 4px 0 20px; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.kpi span { font-size: 12px; color: var(--muted); }
+.kpi b { display: block; font-size: 22px; margin-top: 4px; letter-spacing: -0.03em; }
+
+.admin-view { display: none; }
+.admin-view.active { display: block; }
+
+.badge {
+  display: inline-block; padding: 3px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
+}
+.badge.live { background: var(--live-soft); color: var(--live); }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.wait { background: var(--wait); color: var(--muted); }
+
+.form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 8px; }
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+input, select {
+  border: 1px solid var(--line); border-radius: 10px; background: #fff;
+  padding: 9px 11px; font: inherit; min-width: 160px;
+}
+.btn {
+  background: var(--accent); color: #fff; border: 0; border-radius: 10px;
+  padding: 10px 14px; font-weight: 600; font-size: 14px;
+}
+.btn:hover { filter: brightness(1.05); }
+.ok-msg { color: var(--ok); font-size: 13px; min-height: 1.3em; margin-top: 8px; }
+
+@media (max-width: 800px) {
+  .grid, .steps, .kpis { grid-template-columns: 1fr; }
+  body.modo-admin #shell-admin { grid-template-columns: 1fr; }
+  .side { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .side .logo { width: 100%; margin-bottom: 8px; }
+  .side button { width: auto; }
+  .top { padding-right: 0; padding-top: 56px; }
+}
+</style>
+</head>
+<body>
+<button class="mode-switch" id="mode-switch" type="button">Admin</button>
+
+<div id="shell-cliente">
+  <header class="wrap top">
+    <div class="logo">Torneos<span>.</span></div>
+    <div class="meta">Open Cali · 12–16 nov</div>
+  </header>
+
+  <section class="wrap hero">
+    <h1>Open Cali Clay</h1>
+    <p>Sigue el cuadro y los partidos en vivo. Vista de público.</p>
+    <div class="pills">
+      <span class="pill"><b>16</b> jugadores</span>
+      <span class="pill"><b>2</b> en vivo</span>
+      <span class="pill"><b>Cuartos</b> y semis</span>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>En juego</h2>
+    <div class="grid">
+      <article class="card">
+        <div class="tag"><i></i> Central · Set 2</div>
+        <div class="row win"><span>Camila Ríos</span><span class="score"><span>6</span><span>4</span></span></div>
+        <div class="row"><span>Sofía Ruiz</span><span class="score"><span>3</span><span>2</span></span></div>
+      </article>
+      <article class="card">
+        <div class="tag"><i></i> Cancha 2 · Set 3</div>
+        <div class="row"><span>Andrés Gómez</span><span class="score"><span>7</span><span>4</span><span>3</span></span></div>
+        <div class="row win"><span>Diego Soto</span><span class="score"><span>6</span><span>6</span><span>5</span></span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Cuadro</h2>
+    <div class="steps">
+      <div class="step">
+        <h3>Cuartos</h3>
+        <div class="mini"><strong>Ríos</strong><small>6-2 6-1 vs Peña</small></div>
+        <div class="mini"><strong>Ruiz</strong><small>7-5 6-3 vs Méndez</small></div>
+        <div class="mini"><strong>Gómez</strong><small>6-4 6-4 vs Pérez</small></div>
+        <div class="mini"><strong>Soto</strong><small>6-0 6-3 vs Vargas</small></div>
+      </div>
+      <div class="step">
+        <h3>Semis</h3>
+        <div class="mini"><strong>Ríos vs Ruiz</strong><small>En juego</small></div>
+        <div class="mini"><strong>Gómez vs Soto</strong><small>En juego</small></div>
+      </div>
+      <div class="step">
+        <h3>Final</h3>
+        <div class="mini final"><strong>Domingo 11:00</strong><small>Por definirse</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Ranking</h2>
+    <div class="card" style="padding: 8px 18px 4px">
+      <table>
+        <thead><tr><th>#</th><th>Jugador</th><th>Club</th><th>Pts</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Camila Ríos</td><td>Ace Club</td><td>1840</td></tr>
+          <tr><td>2</td><td>Andrés Gómez</td><td>El Peñón</td><td>1710</td></tr>
+          <tr><td>3</td><td>Diego Soto</td><td>Univalle</td><td>1580</td></tr>
+          <tr><td>4</td><td>Sofía Ruiz</td><td>Ace Club</td><td>1495</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="foot">Demostración · datos ficticios</p>
+  </section>
+</div>
+
+<div id="shell-admin">
+  <aside class="side">
+    <div class="logo">Torneos<span>.</span></div>
+    <nav id="dir-nav">
+      <button type="button" class="active" data-view="mesa">Control</button>
+      <button type="button" data-view="cuadro">Resultados</button>
+      <button type="button" data-view="inscritos">Inscritos</button>
+      <button type="button" data-view="canchas">Canchas</button>
+    </nav>
+  </aside>
+  <main class="main">
+    <section class="admin-view active" id="view-mesa">
+      <h1>Control</h1>
+      <p class="sub">Sábado · Open Cali Clay</p>
+      <div class="kpis">
+        <div class="kpi"><span>Hoy</span><b>6</b></div>
+        <div class="kpi"><span>En juego</span><b>2</b></div>
+        <div class="kpi"><span>Cerrados</span><b>4</b></div>
+        <div class="kpi"><span>Inscritos</span><b>16</b></div>
+      </div>
+      <div class="card" style="padding: 8px 18px">
+        <table>
+          <thead><tr><th>Hora</th><th>Cancha</th><th>Partido</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>09:00</td><td>Central</td><td>Ríos vs Peña</td><td><span class="badge ok">Cerrado</span></td></tr>
+            <tr><td>16:00</td><td>Central</td><td>Ríos vs Ruiz</td><td><span class="badge live">En juego</span></td></tr>
+            <tr><td>16:00</td><td>2</td><td>Gómez vs Soto</td><td><span class="badge live">En juego</span></td></tr>
+            <tr><td>Dom 11:00</td><td>Central</td><td>Final</td><td><span class="badge wait">Pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-view" id="view-cuadro">
+      <h1>Resultados</h1>
+      <p class="sub">Publica un marcador</p>
+      <div class="card">
+        <form class="form" id="form-resultado">
+          <div>
+            <label>Partido</label>
+            <select id="sel-partido">
+              <option>Semi · Ríos vs Ruiz</option>
+              <option>Semi · Gómez vs Soto</option>
+            </select>
+          </div>
+          <div>
+            <label>Ganador</label>
+            <select id="sel-ganador">
+              <option>Camila Ríos</option>
+              <option>Sofía Ruiz</option>
+              <option>Andrés Gómez</option>
+              <option>Diego Soto</option>
+            </select>
+          </div>
+          <div>
+            <label>Sets</label>
+            <input id="sel-sets" value="6-3 6-4">
+          </div>
+          <button class="btn" type="submit">Publicar</button>
+        </form>
+        <p class="ok-msg" id="msg-resultado"></p>
+      </div>
+    </section>
+
+    <section class="admin-view" id="view-inscritos">
+      <h1>Inscritos</h1>
+      <p class="sub">Cuadro de 16</p>
+      <div class="card">
+        <form class="form" id="form-inscrito">
+          <div><label>Nombre</label><input id="ins-nombre" required placeholder="Nombre"></div>
+          <div><label>Club</label><input id="ins-club" placeholder="Club"></div>
+          <button class="btn" type="submit">Añadir</button>
+        </form>
+        <table id="tabla-inscritos">
+          <thead><tr><th>#</th><th>Jugador</th><th>Club</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Camila Ríos</td><td>Ace Club</td></tr>
+            <tr><td>2</td><td>Andrés Gómez</td><td>El Peñón</td></tr>
+            <tr><td>3</td><td>Diego Soto</td><td>Univalle</td></tr>
+            <tr><td>4</td><td>Sofía Ruiz</td><td>Ace Club</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-view" id="view-canchas">
+      <h1>Canchas</h1>
+      <p class="sub">Asignación de hoy</p>
+      <div class="card" style="padding: 8px 18px">
+        <table>
+          <thead><tr><th>Pista</th><th>Uso</th><th>Juez</th></tr></thead>
+          <tbody>
+            <tr><td>Central</td><td>Semifinal</td><td>M. Orozco</td></tr>
+            <tr><td>Cancha 2</td><td>Semifinal</td><td>P. Cárdenas</td></tr>
+            <tr><td>Cancha 3</td><td>Calentamiento</td><td>—</td></tr>
+            <tr><td>Cancha 4</td><td>Libre</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('mode-switch');
+  btn.addEventListener('click', function () {
+    var on = document.body.classList.toggle('modo-admin');
+    btn.textContent = on ? 'Cliente' : 'Admin';
+  });
+
+  document.getElementById('dir-nav').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-view]');
+    if (!b) return;
+    var name = b.getAttribute('data-view');
+    document.querySelectorAll('#dir-nav button').forEach(function (el) {
+      el.classList.toggle('active', el === b);
+    });
+    document.querySelectorAll('#shell-admin .admin-view').forEach(function (el) {
+      el.classList.toggle('active', el.id === 'view-' + name);
+    });
+  });
+
+  document.getElementById('form-resultado').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.getElementById('msg-resultado').textContent =
+      'Listo: ' + document.getElementById('sel-ganador').value + ' · ' + document.getElementById('sel-sets').value;
+  });
+
+  var n = 5;
+  document.getElementById('form-inscrito').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var nom = document.getElementById('ins-nombre').value.trim();
+    var club = document.getElementById('ins-club').value.trim() || '—';
+    if (!nom) return;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + n + '</td><td></td><td></td>';
+    tr.children[1].textContent = nom;
+    tr.children[2].textContent = club;
+    document.querySelector('#tabla-inscritos tbody').appendChild(tr);
+    n += 1;
+    e.target.reset();
+  });
+})();
+</script>
+</body>
+</html>

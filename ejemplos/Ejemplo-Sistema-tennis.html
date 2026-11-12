@@ -1,0 +1,3198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de tennis · Ace Club</title>
+<meta name="description" content="Ace Club Tenis, Cali. Sitio de clientes y panel de administración en un solo archivo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ Base ============ */
+:root {
+  --bg: #0F1110;
+  --bg-2: #131615;
+  --panel: #191C1A;
+  --panel-2: #202422;
+  --line: rgba(255, 255, 255, 0.075);
+  --line-2: rgba(255, 255, 255, 0.15);
+  --text: #E9ECE6;
+  --muted: #9AA398;
+  --muted-2: #6F786E;
+  --accent: #B4EC6A;
+  --accent-2: #8FD23F;
+  --accent-soft: rgba(180, 236, 106, 0.11);
+  --ink: #0C1207;
+  --danger: #FF6B6B;
+  --warn: #FFD419;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --radius: 16px;
+  --wrap: 1180px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 600px at 88% -8%, rgba(143, 210, 63, 0.09), transparent 62%),
+    radial-gradient(900px 560px at -5% 22%, rgba(73, 130, 5, 0.07), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body.modal-open { overflow: hidden; }
+
+img, svg { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+
+::selection { background: var(--accent); color: var(--ink); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb { background: #303531; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #3C423D; }
+
+.wrap {
+  width: min(var(--wrap), 100% - 56px);
+  margin-inline: auto;
+}
+
+/* ============ Utilidades ============ */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* ============ Botones ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.1;
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.btn .ico { width: 17px; height: 17px; flex: 0 0 17px; }
+.btn-primary {
+  background: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 12px 26px rgba(143, 210, 63, 0.16);
+}
+.btn-primary:hover:not(:disabled) {
+  background: #C6F585;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(143, 210, 63, 0.24);
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.17);
+  color: var(--text);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+}
+.btn-soft {
+  background: var(--accent-soft);
+  border-color: rgba(180, 236, 106, 0.28);
+  color: var(--accent);
+}
+.btn-soft:hover:not(:disabled) {
+  background: rgba(180, 236, 106, 0.18);
+  border-color: rgba(180, 236, 106, 0.5);
+}
+.btn-sm { padding: 10px 17px; font-size: 13px; }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+/* ============ Header ============ */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  transition: background 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
+}
+.site-header.scrolled,
+.site-header.nav-open {
+  background: rgba(14, 16, 15, 0.92);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom-color: var(--line);
+}
+.header-inner {
+  height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  flex: 0 0 auto;
+}
+.logo-mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #D2F79A 0%, #A6E258 45%, #6BB029 100%);
+  color: #0B1405;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1;
+  padding-bottom: 2px;
+  box-shadow: 0 8px 20px rgba(143, 210, 63, 0.22);
+}
+.logo-text { display: flex; flex-direction: column; line-height: 1; }
+.logo-name {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: #fff;
+}
+.logo-sub {
+  margin-top: 4px;
+  font-size: 8.5px;
+  letter-spacing: 0.32em;
+  color: var(--muted);
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin: 0 auto;
+}
+.nav-links a {
+  position: relative;
+  padding: 6px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.18s ease;
+}
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 0;
+  height: 1.5px;
+  background: var(--accent);
+  transition: right 0.22s ease;
+}
+.nav-links a:hover { color: #fff; }
+.nav-links a:hover::after { right: 0; }
+.nav-links a.is-active { color: #fff; }
+.nav-links a.is-active::after { right: 0; }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  margin-right: 92px;
+}
+.nav-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: transparent;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.nav-toggle span {
+  width: 17px;
+  height: 1.5px;
+  background: var(--text);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.site-header.nav-open .nav-toggle span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.site-header.nav-open .nav-toggle span:nth-child(2) { opacity: 0; }
+.site-header.nav-open .nav-toggle span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* ============ Hero ============ */
+.hero {
+  position: relative;
+  padding: 132px 0 160px;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 88px 88px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 52% 28%, #000 15%, transparent 72%);
+  mask-image: radial-gradient(ellipse 75% 65% at 52% 28%, #000 15%, transparent 72%);
+  pointer-events: none;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  right: -220px;
+  top: -190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(143, 210, 63, 0.12), transparent 63%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+.hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 26px;
+}
+.hero-copy { max-width: 640px; }
+.hero-copy > * { animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
+.hero-copy > *:nth-child(2) { animation-delay: 0.12s; }
+.hero-copy > *:nth-child(3) { animation-delay: 0.2s; }
+.hero-copy > *:nth-child(4) { animation-delay: 0.28s; }
+.hero h1 {
+  margin: 22px 0;
+  font-family: var(--font-display);
+  font-size: clamp(60px, 7.6vw, 100px);
+  font-weight: 700;
+  line-height: 0.84;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.hero h1 .hl { color: var(--accent); }
+.dot-ball {
+  display: inline-block;
+  width: 0.13em;
+  height: 0.13em;
+  margin-left: 0.07em;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 26px rgba(180, 236, 106, 0.55);
+  vertical-align: 0.06em;
+}
+.hero-copy p {
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 22px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.hero-meta span { display: inline-flex; align-items: center; gap: 7px; }
+.hero-meta svg { width: 15px; height: 15px; color: var(--accent); flex: 0 0 15px; }
+
+/* Cancha del hero */
+.hero-visual {
+  position: relative;
+  height: 530px;
+  display: grid;
+  place-items: center;
+  animation: fadeIn 1.1s ease 0.15s both;
+}
+.court-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.stage-glow {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(143, 210, 63, 0.2), rgba(143, 210, 63, 0.04) 46%, transparent 66%);
+  filter: blur(18px);
+}
+.stage-floor {
+  position: absolute;
+  width: 300px;
+  height: 110px;
+  bottom: 64px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.75), transparent 68%);
+  filter: blur(14px);
+  transform: rotate(-6deg);
+}
+.court-tilt {
+  position: relative;
+  width: min(292px, 72%);
+  transform: perspective(1500px) rotateX(54deg) rotateZ(-25deg);
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 45px 42px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 34px rgba(143, 210, 63, 0.14));
+  animation: courtFloat 11s ease-in-out infinite;
+}
+.court-svg { width: 100%; height: auto; border-radius: 16px; }
+.ball {
+  position: absolute;
+  top: 31%;
+  left: 48%;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #E9FFC4, #B4EC6A 52%, #78AE2F);
+  box-shadow: 0 0 20px rgba(180, 236, 106, 0.55);
+  animation: ballFloat 7.5s ease-in-out infinite;
+  z-index: 3;
+}
+.ball::after {
+  content: "";
+  position: absolute;
+  inset: 3px 5px;
+  border-left: 1.4px solid rgba(40, 70, 10, 0.45);
+  border-radius: 50%;
+  transform: rotate(24deg);
+}
+.float-card {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: rgba(23, 26, 24, 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.46);
+  animation: cardFloat 7s ease-in-out infinite;
+}
+.float-card strong { display: block; font-size: 12.5px; font-weight: 600; color: #fff; line-height: 1.3; }
+.float-card small { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 10.5px; color: var(--muted); }
+.float-card .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgba(180, 236, 106, 0.8); }
+.fc-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.fc-icon svg { width: 17px; height: 17px; }
+.fc-a { top: 12%; right: 0; }
+.fc-b { bottom: 14%; left: -2%; animation-delay: -3.2s; }
+.price-chip {
+  position: absolute;
+  z-index: 4;
+  right: 2%;
+  bottom: 4%;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 236, 106, 0.3);
+  background: rgba(18, 22, 18, 0.9);
+  color: var(--muted);
+  font-size: 11.5px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.price-chip strong { color: var(--accent); font-size: 13px; }
+
+/* ============ Las 3 opciones ============ */
+.options {
+  position: relative;
+  z-index: 6;
+  margin-top: -96px;
+}
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.option-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 22px;
+  border-radius: 18px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, #1D201E 0%, #171A18 100%);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.option-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180, 236, 106, 0.45), transparent);
+}
+.option-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(180, 236, 106, 0.4);
+  background: #1C201D;
+}
+.option-index {
+  position: absolute;
+  top: 19px;
+  right: 21px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--muted-2);
+}
+.option-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(180, 236, 106, 0.22);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  flex: none;
+}
+.option-icon svg { width: 22px; height: 22px; }
+.option-body { display: block; min-width: 0; }
+.option-kicker {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.option-card strong {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.option-card p { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.option-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.option-cta svg { width: 15px; height: 15px; color: var(--accent); transition: transform 0.2s ease; }
+.option-card:hover .option-cta svg { transform: translateX(3px); }
+
+/* ============ Reservas ============ */
+.booking-sec { padding: 92px 0 96px; }
+.booking-card {
+  position: relative;
+  padding: 28px;
+  border-radius: 20px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, #1D201E 0%, #171A18 100%);
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.5);
+}
+.booking-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(180, 236, 106, 0.55), transparent);
+  border-radius: 20px 20px 0 0;
+}
+.booking-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.booking-head h2 {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 3.4vw, 44px);
+  font-weight: 600;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #fff;
+}
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 236, 106, 0.24);
+  background: rgba(180, 236, 106, 0.07);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(180, 236, 106, 0.55);
+  animation: pulse 2.4s infinite;
+}
+.booking-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 342px;
+  gap: 26px;
+  align-items: start;
+}
+.booking-steps,
+.booking-summary { min-width: 0; }
+.bstep + .bstep {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.bstep-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+.step-num {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.bstep-head h3 { font-size: 14px; font-weight: 600; color: #fff; }
+.bstep-head p { font-size: 11.5px; color: var(--muted-2); margin-top: 1px; }
+
+.court-options { display: grid; gap: 8px; }
+.court-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.015);
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.court-opt:hover { border-color: rgba(255, 255, 255, 0.24); background: rgba(255, 255, 255, 0.04); }
+.court-opt.is-active {
+  border-color: rgba(180, 236, 106, 0.45);
+  background: var(--accent-soft);
+}
+.court-swatch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 29px;
+  flex: 0 0 42px;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.court-swatch i {
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1px;
+}
+.court-swatch i::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.55);
+}
+.court-opt-main { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+.court-opt-main strong { font-size: 13px; font-weight: 600; color: #fff; }
+.court-opt-main small { font-size: 11px; color: var(--muted); }
+.court-opt-price {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.court-opt-price small { font-size: 10.5px; font-weight: 400; color: var(--muted-2); }
+
+.tariff-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 11px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--muted-2);
+}
+.tariff-note .live-dot { flex: 0 0 7px; margin-top: 4px; }
+
+.date-strip {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #303531 transparent;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.date-strip::-webkit-scrollbar { height: 6px; }
+.date-strip::-webkit-scrollbar-track { background: transparent; }
+.date-strip::-webkit-scrollbar-thumb { background: #303531; }
+.date-btn { scroll-snap-align: start; }
+.date-btn {
+  flex: 0 0 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 9px 4px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.015);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.date-btn:hover { border-color: rgba(255, 255, 255, 0.24); background: rgba(255, 255, 255, 0.04); }
+.date-btn .d-dow {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.date-btn .d-num {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+}
+.date-btn .d-mon {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-2);
+}
+.date-btn.is-active { border-color: var(--accent); background: var(--accent); }
+.date-btn.is-active .d-dow,
+.date-btn.is-active .d-num,
+.date-btn.is-active .d-mon { color: var(--ink); }
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 7px;
+}
+.slot {
+  position: relative;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.015);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.slot span { display: block; font-size: 12px; font-weight: 600; line-height: 1.2; }
+.slot small { display: block; margin-top: 1px; font-size: 9px; font-weight: 400; color: var(--muted-2); line-height: 1.2; }
+.slot:hover:not(:disabled) {
+  border-color: rgba(180, 236, 106, 0.5);
+  background: rgba(180, 236, 106, 0.07);
+}
+.slot.is-night:not(:disabled)::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.7;
+}
+.slot.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(143, 210, 63, 0.2);
+}
+.slot.is-active small { color: rgba(12, 18, 7, 0.65); }
+.slot:disabled {
+  cursor: not-allowed;
+  color: var(--muted-2);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+.slot.is-busy { text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, 0.25); }
+.slot.is-busy::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.65);
+}
+.slot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 11px;
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+.slot-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.slot-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.lg-free { background: rgba(255, 255, 255, 0.16); }
+.lg-night { background: var(--accent); }
+.lg-busy { background: rgba(255, 107, 107, 0.55); }
+.lg-sel { background: var(--accent); }
+
+.booking-summary {
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #141715;
+}
+.sum-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.sum-head > span:first-child {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sum-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 9.5px;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+.sum-court {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 0;
+}
+.sum-court > div { display: flex; flex-direction: column; line-height: 1.35; }
+.sum-court strong { font-size: 14px; color: #fff; font-weight: 600; }
+.sum-court small { font-size: 11px; color: var(--muted); }
+.sum-rows {
+  display: grid;
+  gap: 8px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.sum-rows > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sum-rows span { font-size: 12px; color: var(--muted); }
+.sum-rows strong { font-size: 12.5px; color: var(--text); font-weight: 500; text-align: right; }
+.sum-prices { display: grid; gap: 6px; padding: 14px 0 16px; }
+.sum-prices > div { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); }
+.sum-total {
+  margin-top: 4px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--line-2);
+  align-items: baseline;
+}
+.sum-total span { color: var(--text); font-weight: 500; }
+.sum-total strong {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+}
+.sum-note { margin-top: 12px; font-size: 10.5px; line-height: 1.55; color: var(--muted-2); text-align: center; }
+
+/* ============ Secciones ============ */
+.section { padding: 92px 0; }
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 36px;
+}
+.section-head > div:first-child { max-width: 720px; }
+.section-head h2 {
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-size: clamp(38px, 4.6vw, 58px);
+  font-weight: 600;
+  line-height: 0.94;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.005em;
+}
+.section-head h2 .hl { color: var(--accent); }
+.section-head p {
+  max-width: 380px;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ============ Planes ============ */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 26px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.plan.featured {
+  background: linear-gradient(165deg, #D6F9A1 0%, #B4EC6A 48%, #93D648 100%);
+  border-color: transparent;
+  color: var(--ink);
+  transform: translateY(-9px);
+  box-shadow: 0 30px 70px rgba(143, 210, 63, 0.17);
+}
+.plan-badge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #D6F9A1;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.plan-name {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.plan.featured .plan-name,
+.plan.featured .plan-desc { color: rgba(12, 18, 7, 0.66); }
+.plan h3 {
+  margin-top: -6px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #fff;
+}
+.plan.featured h3 { color: var(--ink); }
+.plan-desc { font-size: 12px; line-height: 1.6; color: var(--muted); min-height: 38px; }
+.plan-price { display: flex; align-items: baseline; gap: 2px; }
+.plan-price .cur { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--accent); }
+.plan-price strong {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.plan.featured .plan-price .cur,
+.plan.featured .plan-price strong { color: var(--ink); }
+.plan-per { margin-top: -10px; font-size: 10.5px; color: var(--muted-2); }
+.plan.featured .plan-per { color: rgba(12, 18, 7, 0.62); }
+.plan ul {
+  display: grid;
+  gap: 8px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+.plan.featured ul { border-top-color: rgba(12, 18, 7, 0.16); }
+.plan li { display: flex; align-items: flex-start; gap: 8px; font-size: 11.8px; line-height: 1.45; color: var(--text); }
+.plan li svg { width: 14px; height: 14px; flex: 0 0 14px; margin-top: 1px; color: var(--accent); }
+.plan.featured li { color: var(--ink); }
+.plan.featured li svg { color: var(--ink); }
+.plan .btn { margin-top: auto; justify-content: center; }
+.plan.featured .btn-primary {
+  background: var(--ink);
+  color: #D6F9A1;
+  box-shadow: none;
+}
+.plan.featured .btn-primary:hover { background: #1C2B10; }
+.coach { display: flex; align-items: center; gap: 9px; }
+.avatar-ini {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.plan.featured .avatar-ini { border-color: rgba(12, 18, 7, 0.2); background: rgba(12, 18, 7, 0.12); color: var(--ink); }
+.coach div { display: flex; flex-direction: column; line-height: 1.3; }
+.coach strong { font-size: 11.5px; font-weight: 600; color: var(--text); }
+.plan.featured .coach strong { color: var(--ink); }
+.coach span { font-size: 9.5px; color: var(--muted-2); }
+.plan.featured .coach span { color: rgba(12, 18, 7, 0.62); }
+
+/* ============ Tienda ============ */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+.product {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.product:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.2); }
+.product-visual {
+  height: 128px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 50% 125%, rgba(180, 236, 106, 0.13), transparent 64%),
+    #141816;
+  border: 1px solid var(--line);
+  color: var(--accent);
+}
+.product-visual svg { width: 64px; height: 64px; }
+.product-cat {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.product h3 { font-size: 13.5px; font-weight: 600; line-height: 1.35; color: #fff; }
+.product-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+.product-price { display: flex; flex-direction: column; line-height: 1.25; }
+.product-price strong { font-size: 15px; font-weight: 600; color: #fff; }
+.product-price span { font-size: 9.5px; color: var(--muted-2); }
+
+/* Carrito */
+.cart {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid var(--line-2);
+  background: #171A18;
+}
+.cart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.cart-head h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #fff;
+}
+.cart-head span { font-size: 10.5px; color: var(--muted-2); }
+.cart-empty { padding: 22px 2px 8px; font-size: 12.5px; color: var(--muted); }
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cart-prod { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.4; }
+.cart-prod strong { font-size: 12.5px; font-weight: 600; color: #fff; }
+.cart-prod span { font-size: 10.5px; color: var(--muted-2); }
+.qty {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.qty button { width: 28px; height: 28px; border: 0; background: transparent; color: var(--text); font-size: 14px; line-height: 1; }
+.qty button:hover { background: rgba(255, 255, 255, 0.06); }
+.qty span { min-width: 26px; text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
+.cart-line { min-width: 76px; text-align: right; font-size: 12.5px; color: #fff; }
+.cart-remove {
+  border: 0;
+  background: none;
+  padding: 2px;
+  font-size: 10.5px;
+  color: var(--muted-2);
+  text-decoration: underline;
+}
+.cart-remove:hover { color: var(--danger); }
+.cart-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+}
+.cart-total { display: flex; flex-direction: column; line-height: 1.2; }
+.cart-total span { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.cart-total strong {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ============ Vistas ============ */
+.view { display: none; }
+.view.is-active { display: block; animation: fadeView 0.3s ease both; }
+@keyframes fadeView {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.18s ease;
+}
+.back-link svg { width: 15px; height: 15px; }
+.back-link:hover { color: var(--accent); }
+
+/* ============ Barra móvil de reserva ============ */
+.mobile-bar { display: none; }
+
+/* ============ Datos del negocio ============ */
+.business-sec { padding: 70px 0 96px; }
+.business-head { max-width: 640px; }
+.business-head h2 {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 600;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #fff;
+}
+.business-head p { margin-top: 12px; font-size: 13.5px; line-height: 1.7; color: var(--muted); }
+.business-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 30px;
+}
+.biz-card {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(180deg, #1B1E1C 0%, #161917 100%);
+}
+.biz-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(180, 236, 106, 0.2);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.biz-icon svg { width: 18px; height: 18px; }
+.biz-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.biz-card strong { display: block; font-size: 14px; font-weight: 600; color: #fff; line-height: 1.35; }
+.biz-card p { margin-top: 4px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.biz-card a { color: inherit; }
+.biz-card a:hover { color: var(--accent); }
+
+/* ============ Footer ============ */
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: #0B0D0C;
+  padding: 54px 0 26px;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 34px;
+}
+.footer-brand p { max-width: 30ch; margin-top: 14px; font-size: 12px; line-height: 1.65; color: var(--muted); }
+.footer-col h4 {
+  margin: 4px 0 14px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.footer-col ul { display: grid; gap: 9px; }
+.footer-col a,
+.footer-col span { font-size: 12px; color: var(--muted); transition: color 0.16s ease; }
+.footer-col a:hover { color: var(--accent); }
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+.footer-bottom a, .footer-bottom button { color: var(--muted); background: none; border: none; padding: 0; font: inherit; cursor: pointer; }
+.footer-bottom a:hover, .footer-bottom button:hover { color: var(--accent); }
+.footer-demo { display: inline-flex; align-items: center; gap: 7px; }
+.footer-demo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+
+/* ============ Modal ============ */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal.open { visibility: visible; opacity: 1; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 5, 0.76);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+.modal-panel {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: 18px;
+  border: 1px solid var(--line-2);
+  background: #181B19;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6);
+  transform: translateY(14px);
+  transition: transform 0.22s ease;
+}
+.modal.open .modal-panel { transform: none; }
+.modal-close {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  z-index: 2;
+}
+.modal-close:hover { background: var(--panel-2); color: #fff; }
+.modal-heading .eyebrow { margin-bottom: 10px; }
+.modal-heading h3 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 0.96;
+  text-transform: uppercase;
+  color: #fff;
+}
+.modal-heading p { margin-top: 7px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.modal-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 18px 0;
+  padding: 13px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+}
+.modal-summary > div { display: flex; flex-direction: column; line-height: 1.4; min-width: 0; }
+.modal-summary strong { font-size: 12.5px; color: #fff; font-weight: 600; }
+.modal-summary span { font-size: 10.5px; color: var(--muted); }
+.modal-summary b {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.modal-list { display: grid; gap: 7px; margin: 16px 0; }
+.modal-list > div { display: flex; justify-content: space-between; gap: 14px; font-size: 12px; color: var(--muted); }
+.modal-list strong { color: var(--text); font-weight: 500; }
+.modal-list .modal-total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line-2);
+  font-size: 13px;
+  color: var(--text);
+}
+.modal-list .modal-total b { font-family: var(--font-display); font-size: 22px; color: var(--accent); font-weight: 600; }
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 11px; }
+.field > span { font-size: 10.5px; letter-spacing: 0.04em; color: var(--muted); }
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #3B403C;
+  background: #121514;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.input::placeholder { color: #5F675F; }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(180, 236, 106, 0.12); }
+.form-note { margin-top: 10px; font-size: 10px; line-height: 1.5; color: var(--muted-2); text-align: center; }
+.form-error {
+  margin: 4px 0 10px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.25);
+  color: #FFB3B3;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.success { text-align: center; padding: 6px 2px 2px; }
+.success-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.success-icon svg { width: 27px; height: 27px; }
+.success h3 {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #fff;
+}
+.success p { margin-top: 9px; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.success-detail {
+  margin: 18px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--line-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text);
+  text-align: left;
+}
+.success .btn { margin-top: 4px; }
+.code-pill {
+  display: inline-block;
+  margin: 14px 0 4px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 236, 106, 0.35);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 14px;
+  letter-spacing: 0.13em;
+}
+
+/* ============ Toast ============ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 120;
+  max-width: min(440px, calc(100% - 32px));
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(180, 236, 106, 0.32);
+  background: #1B201A;
+  color: var(--text);
+  font-size: 12.5px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ============ Animaciones ============ */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes courtFloat {
+  0%, 100% { transform: perspective(1500px) rotateX(54deg) rotateZ(-25deg) translateY(0); }
+  50% { transform: perspective(1500px) rotateX(54deg) rotateZ(-25deg) translateY(-10px); }
+}
+@keyframes ballFloat {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-14px, -18px); }
+}
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(180, 236, 106, 0.45); }
+  70% { box-shadow: 0 0 0 7px rgba(180, 236, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(180, 236, 106, 0); }
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 1120px) {
+  .hero h1 { font-size: clamp(56px, 7.8vw, 88px); }
+  .plans-grid { gap: 14px; }
+  .plan { padding: 22px; }
+}
+@media (max-width: 980px) {
+  .nav-links {
+    position: absolute;
+    top: 78px;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 8px 28px 20px;
+    background: #0E100F;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 30px 50px rgba(0, 0, 0, 0.45);
+    max-height: calc(100vh - 78px);
+    overflow-y: auto;
+  }
+  .site-header.nav-open .nav-links { display: flex; }
+  .nav-links a { padding: 13px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .nav-links a::after { display: none; }
+  .nav-toggle { display: inline-flex; }
+  .header-actions { margin-left: auto; }
+
+  .hero { padding: 128px 0 150px; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-visual { display: none; }
+  .hero-copy { max-width: 720px; }
+  .options { margin-top: -78px; }
+  .options-grid { grid-template-columns: 1fr; gap: 12px; }
+  .option-card { flex-direction: row; align-items: center; flex-wrap: wrap; padding: 18px; gap: 14px; }
+  .option-body { flex: 1 1 0; }
+  .option-card strong { font-size: 24px; }
+  .option-card p { flex-basis: 100%; }
+  .option-cta { flex-basis: 100%; }
+  .option-index { top: 16px; right: 18px; }
+
+  .booking-grid { grid-template-columns: minmax(0, 1fr); }
+  .booking-summary { position: static; }
+  .plans-grid { grid-template-columns: 1fr; gap: 16px; }
+  .plan.featured { transform: none; }
+  .plan-desc { min-height: 0; }
+  .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .business-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .wrap { width: calc(100% - 32px); }
+  .header-inner { height: 70px; }
+  .nav-links { top: 70px; padding-inline: 16px; max-height: calc(100vh - 70px); }
+  .logo-mark { width: 36px; height: 36px; font-size: 24px; }
+  .logo-name { font-size: 18px; }
+  .logo-sub { font-size: 7.5px; }
+  .header-actions .btn-primary { padding: 9px 14px; font-size: 12px; }
+
+  .hero { padding: 112px 0 136px; }
+  .hero h1 { font-size: clamp(52px, 13vw, 76px); }
+  .hero-copy p { font-size: 14.5px; }
+  .options { margin-top: -66px; }
+  .booking-sec { padding: 66px 0 70px; }
+  .booking-card { padding: 20px; }
+  .booking-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .slot-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  .section { padding: 68px 0; }
+  .section-head h2 { font-size: clamp(34px, 9vw, 46px); }
+  .products-grid { grid-template-columns: 1fr; }
+  .product-visual { height: 112px; }
+  .business-sec { padding: 54px 0 70px; }
+  .business-grid { gap: 10px; }
+  .biz-card { padding: 16px; }
+  .footer-grid { grid-template-columns: 1fr; gap: 26px; }
+  .footer-bottom { flex-direction: column; align-items: flex-start; gap: 9px; }
+  .modal-panel { padding: 22px; }
+  .cart-row { flex-wrap: wrap; }
+  .cart-prod { flex-basis: 100%; }
+  .cart-line { margin-left: auto; }
+
+  .mobile-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(180, 236, 106, 0.32);
+    background: rgba(17, 21, 17, 0.97);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  }
+  .mobile-bar[hidden] { display: none !important; }
+  .mobile-bar span {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mobile-bar strong {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .mobile-bar .btn { flex: 0 0 auto; padding: 11px 16px; font-size: 12px; }
+  body.tiene-barra .booking-sec { padding-bottom: 130px; }
+}
+@media (max-width: 380px) {
+  .header-inner { gap: 10px; }
+  .logo { gap: 8px; }
+  .logo-mark { width: 34px; height: 34px; font-size: 22px; }
+  .logo-name { font-size: 16px; }
+  .logo-sub { font-size: 7px; letter-spacing: 0.26em; }
+  .header-actions { gap: 7px; }
+  .header-actions .btn-primary { padding: 8px 12px; font-size: 11.5px; }
+  .nav-toggle { width: 38px; height: 38px; }
+  .option-card strong { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ============ Cambio de modo ============ */
+.mode-switch {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 236, 106, 0.45);
+  background: rgba(17, 21, 17, 0.94);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.mode-switch:hover { background: var(--accent); color: var(--ink); }
+body.modo-admin .mode-switch {
+  top: 12px;
+  right: 18px;
+}
+body.modo-admin {
+  overflow: hidden;
+  height: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+}
+body.modo-admin html { height: 100%; }
+#shell-admin { display: none; }
+body.modo-admin #shell-cliente { display: none; }
+body.modo-admin #shell-admin { display: flex; min-height: 100vh; }
+body.modo-admin .site-header,
+body.modo-admin .mobile-bar,
+body.modo-admin .toast { display: none !important; }
+
+#shell-admin .sidebar {
+  width: 248px; flex: 0 0 248px;
+  background: var(--bg-2); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0;
+}
+#shell-admin .brand { display: flex; align-items: center; gap: 12px; padding: 18px 16px; border-bottom: 1px solid var(--line); }
+#shell-admin .brand-logo {
+  width: 40px; height: 40px; display: grid; place-items: center; border-radius: 11px;
+  background: linear-gradient(145deg, #D2F79A 0%, #A6E258 45%, #6BB029 100%);
+  color: #0B1405; font-family: var(--font-display); font-size: 26px; font-weight: 700;
+}
+#shell-admin .brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: 0.08em; color: #fff; }
+#shell-admin .brand-sub { margin-top: 3px; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+#shell-admin .nav { flex: 1; overflow-y: auto; padding: 10px; }
+#shell-admin .nav-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted-2); padding: 14px 12px 6px; }
+#shell-admin .nav-item {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 9px 12px; background: transparent; border: none;
+  border-left: 3px solid transparent; border-radius: 8px;
+  color: var(--muted); font-size: 13.5px; text-align: left; margin-bottom: 2px;
+}
+#shell-admin .nav-item svg { width: 17px; height: 17px; flex: 0 0 17px; }
+#shell-admin .nav-item:hover { background: var(--panel); color: #fff; }
+#shell-admin .nav-item.active { background: var(--accent-soft); border-left-color: var(--accent); color: #fff; font-weight: 600; }
+#shell-admin .sidebar-foot { padding: 14px 16px; border-top: 1px solid var(--line); color: var(--muted-2); font-size: 11px; }
+#shell-admin .main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+#shell-admin .topbar {
+  height: 58px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; padding-right: 130px; border-bottom: 1px solid var(--line);
+}
+#shell-admin .crumb { font-size: 13px; color: var(--muted); }
+#shell-admin .crumb strong { color: #fff; }
+#shell-admin .crumb .sep { margin: 0 8px; color: var(--muted-2); }
+#shell-admin .topbar-right { display: flex; align-items: center; gap: 14px; }
+#shell-admin .demo-pill {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--panel); font-size: 11.5px; color: var(--muted);
+}
+#shell-admin .demo-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+#shell-admin .user-chip { display: flex; align-items: center; gap: 9px; }
+#shell-admin .avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft);
+  border: 1px solid rgba(180, 236, 106, 0.35); display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: var(--accent);
+}
+#shell-admin .user-name { font-size: 12.5px; color: #fff; }
+#shell-admin .user-role { font-size: 10.5px; color: var(--muted-2); }
+#shell-admin .menu-btn { display: none; width: 40px; height: 40px; border: 1px solid var(--line-2); border-radius: 10px; background: transparent; }
+#shell-admin .content { padding: 24px 26px 48px; overflow-y: auto; flex: 1; }
+#shell-admin .screen-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+#shell-admin .screen-head h1 { font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #fff; }
+#shell-admin .screen-head p { margin-top: 4px; color: var(--muted); font-size: 13px; }
+#shell-admin .head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+#shell-admin .kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+#shell-admin .kpi { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+#shell-admin .kpi .k { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#shell-admin .kpi .v { margin: 8px 0 4px; font-family: var(--font-display); font-size: 28px; font-weight: 700; color: #fff; line-height: 1; }
+#shell-admin .kpi .s { font-size: 12px; color: var(--muted); }
+#shell-admin .kpi.good .v { color: var(--accent); }
+#shell-admin .grid-2 { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 12px; margin-bottom: 12px; }
+#shell-admin .grid-2.equal { grid-template-columns: 1fr 1fr; }
+#shell-admin .panel { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+#shell-admin .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+#shell-admin .panel-head h3 { font-size: 14px; font-weight: 600; color: #fff; }
+#shell-admin .panel-head .sub { font-size: 12px; color: var(--muted); }
+#shell-admin .panel-body { padding: 16px; }
+#shell-admin .panel-body.tight { padding: 6px 0; }
+#shell-admin .bars { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+#shell-admin .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+#shell-admin .bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+#shell-admin .bar { width: 100%; border-radius: 4px 4px 2px 2px; background: linear-gradient(180deg, var(--accent), #6BB029); min-height: 4px; }
+#shell-admin .bar-label { margin-top: 6px; font-size: 9.5px; color: var(--muted-2); }
+#shell-admin .donut-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+#shell-admin .donut { width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 132px; }
+#shell-admin .donut-hole { width: 86px; height: 86px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; text-align: center; }
+#shell-admin .donut-hole .v { display: block; font-size: 13px; font-weight: 700; color: #fff; }
+#shell-admin .donut-hole .k { display: block; font-size: 10px; color: var(--muted); }
+#shell-admin .legend { flex: 1; min-width: 180px; }
+#shell-admin .legend-item { display: grid; grid-template-columns: 10px 1fr auto auto; gap: 8px; align-items: center; padding: 5px 0; font-size: 12.5px; }
+#shell-admin .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+#shell-admin .legend-item .val { color: #fff; }
+#shell-admin .legend-item .pct { color: var(--muted); width: 36px; text-align: right; }
+#shell-admin .list-item, #shell-admin .alert-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+#shell-admin .list-item:last-child, #shell-admin .alert-item:last-child { border-bottom: none; }
+#shell-admin .li-time { width: 46px; font-size: 12px; font-weight: 600; color: var(--accent); }
+#shell-admin .li-main { font-size: 13.5px; color: #fff; }
+#shell-admin .li-sub { font-size: 12px; color: var(--muted); }
+#shell-admin .li-right { margin-left: auto; }
+#shell-admin .badge { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+#shell-admin .badge.info { background: rgba(107,180,255,0.14); color: #6BB4FF; }
+#shell-admin .badge.warn { background: rgba(255,212,25,0.12); color: var(--warn); }
+#shell-admin .badge.ok { background: var(--accent-soft); color: var(--accent); }
+#shell-admin .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; }
+#shell-admin .text-warn { color: var(--warn); font-size: 12px; }
+#shell-admin .table-wrap { overflow-x: auto; }
+#shell-admin table { width: 100%; border-collapse: collapse; }
+#shell-admin th, #shell-admin td { padding: 11px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--line); }
+#shell-admin th { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+#shell-admin tr:last-child td { border-bottom: none; }
+#shell-admin .right { text-align: right; }
+#shell-admin .mono { font-family: Consolas, monospace; font-size: 12.5px; }
+#shell-admin .admin-view { display: none; }
+#shell-admin .admin-view.active { display: block; }
+#shell-admin .modules-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+#shell-admin .mod-card { padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
+#shell-admin .mod-card h3 { font-family: var(--font-display); font-size: 22px; text-transform: uppercase; color: #fff; }
+#shell-admin .mod-card p { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+#shell-admin .link-btn { background: none; border: none; color: var(--accent); font-size: 12.5px; font-weight: 600; }
+@media (max-width: 1100px) {
+  #shell-admin .kpi-grid, #shell-admin .modules-grid { grid-template-columns: 1fr 1fr; }
+  #shell-admin .grid-2, #shell-admin .grid-2.equal { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  #shell-admin .sidebar { position: fixed; left: 0; top: 0; z-index: 40; transform: translateX(-105%); transition: transform 0.22s ease; }
+  body.nav-open #shell-admin .sidebar { transform: none; }
+  #shell-admin .menu-btn { display: grid; place-items: center; }
+  #shell-admin .kpi-grid, #shell-admin .modules-grid { grid-template-columns: 1fr; }
+  #shell-admin .demo-pill { display: none; }
+}
+</style>
+</head>
+<body>
+
+<button class="mode-switch" id="mode-switch" type="button">Admin</button>
+
+<div id="shell-cliente">
+<header class="site-header" id="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="#inicio" aria-label="Ace Club Tenis, ir al inicio">
+      <span class="logo-mark" aria-hidden="true">A</span>
+      <span class="logo-text">
+        <span class="logo-name">ACE CLUB</span>
+        <span class="logo-sub">TENIS · CALI</span>
+      </span>
+    </a>
+
+    <nav class="nav-links" id="nav-links" aria-label="Navegación principal">
+      <a href="#inicio">Inicio</a>
+      <a href="#canchas">Canchas</a>
+      <a href="#planes">Planes</a>
+      <a href="#tienda">Tienda</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="header-actions">
+      <a class="btn btn-primary btn-sm" href="#canchas">Reservar cancha</a>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- INICIO -->
+  <div class="view is-active" id="view-inicio">
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Club de tenis · Cali, Colombia</span>
+        <h1>Juega.<br>Entrena.<br><span class="hl">Equípate.</span></h1>
+        <p>Tres formas de vivir Ace Club: reserva tu cancha, súmate a un plan de entrenamiento o consigue lo que necesitas en la tienda.</p>
+        <div class="hero-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            Abierto hoy · 6:00 a 22:00
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 9a6 6 0 0 0 0 6M15.5 9a6 6 0 0 1 0 6"/></svg>
+            Canchas desde $45.000 / hora
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            Calle 15 # 25-40 · Cali
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="court-scene" aria-hidden="true">
+          <div class="stage-glow"></div>
+          <div class="stage-floor"></div>
+          <div class="court-tilt">
+            <svg class="court-svg" viewBox="0 0 360 720">
+              <defs>
+                <linearGradient id="heroSurf" x1="0" y1="0" x2="0.4" y2="1">
+                  <stop offset="0" stop-color="#348A57"/>
+                  <stop offset="0.55" stop-color="#23663F"/>
+                  <stop offset="1" stop-color="#12301F"/>
+                </linearGradient>
+                <radialGradient id="courtLight" cx="0.5" cy="0.18" r="0.85">
+                  <stop offset="0" stop-color="#B4EC6A" stop-opacity="0.2"/>
+                  <stop offset="1" stop-color="#B4EC6A" stop-opacity="0"/>
+                </radialGradient>
+                <pattern id="netMesh" width="10" height="18" patternUnits="userSpaceOnUse">
+                  <path d="M0 0v18M10 0v18" stroke="rgba(255,255,255,0.26)" stroke-width="1"/>
+                  <path d="M0 9h10" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect x="14" y="14" width="332" height="692" rx="14" fill="#0D110E" stroke="rgba(255,255,255,0.08)"/>
+              <rect x="30" y="40" width="300" height="640" fill="url(#heroSurf)"/>
+              <rect x="30" y="40" width="300" height="640" fill="url(#courtLight)"/>
+              <g stroke="rgba(255,255,255,0.055)" stroke-width="1">
+                <path d="M30 104h300M30 168h300M30 232h300M30 296h300M30 424h300M30 488h300M30 552h300M30 616h300"/>
+              </g>
+              <g fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="2.4">
+                <rect x="30" y="40" width="300" height="640"/>
+                <path d="M67.5 40v640M292.5 40v640"/>
+                <path d="M30 187.7h300M30 532.3h300"/>
+                <path d="M180 187.7v344.6"/>
+              </g>
+              <path d="M180 40v10M180 670v10" stroke="rgba(255,255,255,0.82)" stroke-width="2.4"/>
+              <rect x="30" y="350" width="300" height="20" fill="url(#netMesh)" opacity="0.85"/>
+              <path d="M30 360h300" stroke="#E8EFE3" stroke-width="4"/>
+              <circle cx="30" cy="360" r="5" fill="#DCE6D4"/>
+              <circle cx="330" cy="360" r="5" fill="#DCE6D4"/>
+            </svg>
+          </div>
+          <span class="ball"></span>
+          <div class="float-card fc-a">
+            <span class="fc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+            </span>
+            <span>
+              <strong>3 canchas disponibles</strong>
+              <small><i class="dot"></i>Misma tarifa · reserva por hora</small>
+            </span>
+          </div>
+          <div class="float-card fc-b">
+            <span class="fc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4.5 4.5L19 7"/></svg>
+            </span>
+            <span>
+              <strong>Reserva confirmada</strong>
+              <small>Hoy · 19:00 – 20:00</small>
+            </span>
+          </div>
+          <span class="price-chip">Día <strong>$45.000</strong> · Noche <strong>$55.000</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAS TRES OPCIONES -->
+  <section class="options" aria-label="¿Qué quieres hacer hoy?">
+    <div class="wrap options-grid">
+      <a class="option-card" href="#canchas">
+        <span class="option-index" aria-hidden="true">01</span>
+        <span class="option-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M4 9h16M4 15h16"/></svg>
+        </span>
+        <span class="option-body">
+          <span class="option-kicker">Reservas</span>
+          <strong>Reserva tu cancha</strong>
+        </span>
+        <p>Elige fecha, cancha y hora. Las tres canchas tienen la misma tarifa, con precio especial de noche.</p>
+        <span class="option-cta">Ver horarios
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a class="option-card" href="#planes">
+        <span class="option-index" aria-hidden="true">02</span>
+        <span class="option-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/><path d="M9 14.5 7 21M15 14.5 17 21"/></svg>
+        </span>
+        <span class="option-body">
+          <span class="option-kicker">Entrenamiento</span>
+          <strong>Planes de entrenamiento</strong>
+        </span>
+        <p>Clases en grupo o 1 a 1 con entrenadores certificados. Tres niveles, desde $160.000 al mes.</p>
+        <span class="option-cta">Ver planes
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a class="option-card" href="#tienda">
+        <span class="option-index" aria-hidden="true">03</span>
+        <span class="option-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1.5 13h-15z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        </span>
+        <span class="option-body">
+          <span class="option-kicker">Tienda</span>
+          <strong>Compra en la tienda</strong>
+        </span>
+        <p>Pelotas, grips, ropa y equipos. Agrega al carrito y recoge tu pedido en recepción.</p>
+        <span class="option-cta">Ver productos
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <!-- DATOS DEL NEGOCIO -->
+  <section class="business-sec" id="contacto">
+    <div class="wrap">
+      <div class="business-head">
+        <span class="eyebrow">Datos del club</span>
+        <h2>Ven a jugar a Ace Club</h2>
+        <p>Estamos en Cali, abiertos todos los días. Tres canchas, escuela de tenis y tienda en el mismo lugar.</p>
+      </div>
+      <div class="business-grid">
+        <article class="biz-card">
+          <span class="biz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </span>
+          <span class="biz-label">Horario</span>
+          <strong>6:00 a. m. – 10:00 p. m.</strong>
+          <p>Lunes a domingo</p>
+        </article>
+        <article class="biz-card">
+          <span class="biz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+          </span>
+          <span class="biz-label">Dirección</span>
+          <strong>Calle 15 # 25-40</strong>
+          <p>Cali, Colombia</p>
+        </article>
+        <article class="biz-card">
+          <span class="biz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 9a6 6 0 0 0 0 6M15.5 9a6 6 0 0 1 0 6"/></svg>
+          </span>
+          <span class="biz-label">Tarifas de cancha</span>
+          <strong>$45.000 / hora</strong>
+          <p>Desde las 6:00 p. m.: $55.000</p>
+        </article>
+        <article class="biz-card">
+          <span class="biz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h3l2 5-2.5 1.5a12 12 0 0 0 5 5L16 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 5 6.2 2 2 0 0 1 7 4z"/></svg>
+          </span>
+          <span class="biz-label">Contacto</span>
+          <strong><a href="tel:+576025550142">(602) 555 0142</a></strong>
+          <p><a href="mailto:hola@aceclub.demo">hola@aceclub.demo</a></p>
+        </article>
+      </div>
+    </div>
+  </section>
+  </div><!-- /view-inicio -->
+
+  <!-- CANCHAS -->
+  <div class="view" id="view-canchas">
+  <section class="booking-sec">
+    <div class="wrap">
+      <a class="back-link" href="#inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+        Volver al inicio
+      </a>
+      <div class="booking-card">
+        <div class="booking-head">
+          <div>
+            <span class="eyebrow">Reserva en línea</span>
+            <h2>Arma tu partido</h2>
+          </div>
+          <span class="live-pill"><span class="live-dot"></span>Disponibilidad en vivo</span>
+        </div>
+
+        <div class="booking-grid">
+          <div class="booking-steps">
+            <div class="bstep">
+              <div class="bstep-head">
+                <span class="step-num">01</span>
+                <div>
+                  <h3>Elige el día</h3>
+                  <p>Reservas hasta con 14 días de anticipación</p>
+                </div>
+              </div>
+              <div class="date-strip" id="date-strip"></div>
+            </div>
+
+            <div class="bstep" id="paso-cancha">
+              <div class="bstep-head">
+                <span class="step-num">02</span>
+                <div>
+                  <h3>Elige tu cancha</h3>
+                  <p>Tarifa igual para las tres · IVA discriminado al final</p>
+                </div>
+              </div>
+              <div class="court-options" id="court-options"></div>
+              <p class="tariff-note"><span class="live-dot"></span>Día: $45.000 por hora. Después de las 6:00 p. m.: $55.000 por hora.</p>
+            </div>
+
+            <div class="bstep" id="paso-hora">
+              <div class="bstep-head">
+                <span class="step-num">03</span>
+                <div>
+                  <h3>Elige la hora</h3>
+                  <p>Canchas disponibles de 6:00 a 22:00</p>
+                </div>
+              </div>
+              <div class="slot-grid" id="slot-grid"></div>
+              <div class="slot-legend">
+                <span><i class="lg-free"></i>Disponible</span>
+                <span><i class="lg-night"></i>Tarifa noche</span>
+                <span><i class="lg-busy"></i>Ocupado</span>
+                <span><i class="lg-sel"></i>Tu selección</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="booking-summary" aria-label="Resumen de la reserva">
+            <div class="sum-head">
+              <span>Tu reserva</span>
+              <span class="sum-badge">Pago en recepción</span>
+            </div>
+            <div class="sum-court">
+              <span class="court-swatch" id="sum-swatch"><i></i></span>
+              <div>
+                <strong id="sum-cancha">Cancha Central</strong>
+                <small id="sum-tipo">Dura · Grado torneo</small>
+              </div>
+            </div>
+            <div class="sum-rows">
+              <div><span>Fecha</span><strong id="sum-fecha">—</strong></div>
+              <div><span>Hora</span><strong id="sum-hora">Elige una hora</strong></div>
+              <div><span>Duración</span><strong>1 hora</strong></div>
+              <div><span>Tarifa</span><strong id="sum-tarifa">—</strong></div>
+            </div>
+            <div class="sum-prices">
+              <div><span>Subtotal</span><span id="sum-sub">$0</span></div>
+              <div><span>IVA 19%</span><span id="sum-iva">$0</span></div>
+              <div class="sum-total"><span>Total</span><strong id="sum-total">$0</strong></div>
+            </div>
+            <button class="btn btn-primary btn-block" id="btn-confirm" type="button" disabled>Confirmar reserva</button>
+            <p class="sum-note">Cancelación gratuita hasta 2 horas antes. Muestra tu código en recepción.</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+  </div><!-- /view-canchas -->
+
+  <!-- PLANES -->
+  <div class="view" id="view-planes">
+  <section class="section">
+    <div class="wrap">
+      <a class="back-link" href="#inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+        Volver al inicio
+      </a>
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Escuela y entrenamiento</span>
+          <h2>Tu nivel.<br><span class="hl">Nuestro plan.</span></h2>
+        </div>
+        <p>Grupos pequeños y entrenadores certificados. Elige un plan mensual y te ayudamos a agendar tu primera clase.</p>
+      </div>
+      <div class="plans-grid" id="plans-grid"></div>
+    </div>
+  </section>
+  </div><!-- /view-planes -->
+
+  <!-- TIENDA -->
+  <div class="view" id="view-tienda">
+  <section class="section">
+    <div class="wrap">
+      <a class="back-link" href="#inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+        Volver al inicio
+      </a>
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Tienda del club</span>
+          <h2>Todo para<br><span class="hl">entrar a la cancha.</span></h2>
+        </div>
+        <p>Equipos y accesorios listos para recoger en recepción. Agrega lo que necesites y completa tu pedido.</p>
+      </div>
+      <div class="products-grid" id="products-grid"></div>
+      <div class="cart" aria-labelledby="cart-title">
+        <div class="cart-head">
+          <h3 id="cart-title">Tu carrito</h3>
+          <span id="cart-count">0 productos</span>
+        </div>
+        <div id="cart-body"></div>
+      </div>
+    </div>
+  </section>
+  </div><!-- /view-tienda -->
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="logo" href="#inicio" aria-label="Ace Club Tenis">
+          <span class="logo-mark" aria-hidden="true">A</span>
+          <span class="logo-text">
+            <span class="logo-name">ACE CLUB</span>
+            <span class="logo-sub">TENIS · CALI</span>
+          </span>
+        </a>
+        <p>Tres canchas, planes de entrenamiento y una tienda para que solo te preocupes por jugar.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Club</h4>
+        <ul>
+          <li><a href="#canchas">Reservar cancha</a></li>
+          <li><a href="#planes">Planes</a></li>
+          <li><a href="#tienda">Tienda</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Horario</h4>
+        <ul>
+          <li><span>Lunes a domingo</span></li>
+          <li><span>6:00 a. m. – 10:00 p. m.</span></li>
+          <li><span>Tarifa noche desde 6:00 p. m.</span></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <ul>
+          <li><span>Calle 15 # 25-40 · Cali</span></li>
+          <li><a href="tel:+576025550142">(602) 555 0142</a></li>
+          <li><a href="mailto:hola@aceclub.demo">hola@aceclub.demo</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-demo"><i class="dot"></i>Sitio de demostración · Empresa y datos ficticios · No se realizan cobros.</span>
+      <button type="button" class="footer-admin-link" id="footer-admin">Panel administrativo</button>
+    </div>
+  </div>
+</footer>
+
+<div class="mobile-bar" id="mobile-bar" hidden>
+  <div>
+    <span>Total reserva</span>
+    <strong id="mb-total">$0</strong>
+  </div>
+  <button class="btn btn-primary btn-sm" id="mb-confirm" type="button">Confirmar reserva</button>
+</div>
+
+<div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="document" tabindex="-1">
+    <button class="modal-close" type="button" data-close aria-label="Cerrar ventana">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div><!-- /shell-cliente -->
+
+<div id="shell-admin" class="app" aria-hidden="true">
+  <aside class="sidebar" id="admin-sidebar">
+    <div class="brand">
+      <div class="brand-logo">A</div>
+      <div>
+        <div class="brand-name">ACE CLUB</div>
+        <div class="brand-sub">Administración</div>
+      </div>
+    </div>
+    <nav class="nav" id="admin-nav">
+      <div class="nav-label">Principal</div>
+      <button class="nav-item active" data-admin-view="inicio" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg>
+        <span>Inicio</span>
+      </button>
+      <div class="nav-label">Operación</div>
+      <button class="nav-item" data-admin-view="agenda" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Agenda de canchas</span>
+      </button>
+      <button class="nav-item" data-admin-view="clases" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a15 15 0 0 1 0 18M3 12h18"/></svg>
+        <span>Clases</span>
+      </button>
+      <button class="nav-item" data-admin-view="membresias" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <span>Membresías</span>
+      </button>
+      <button class="nav-item" data-admin-view="clientes" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span>Clientes</span>
+      </button>
+      <div class="nav-label">Comercial</div>
+      <button class="nav-item" data-admin-view="productos" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Productos</span>
+      </button>
+      <button class="nav-item" data-admin-view="ventas" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>Ventas</span>
+      </button>
+      <div class="nav-label">Finanzas</div>
+      <button class="nav-item" data-admin-view="informes" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        <span>Informes</span>
+      </button>
+    </nav>
+    <div class="sidebar-foot">Versión sencilla unificada · datos de demostración</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="menu-btn" id="admin-menu" type="button" aria-label="Menú">☰</button>
+        <div class="crumb"><strong id="admin-crumb">Inicio</strong><span class="sep">/</span>Panel gerencial</div>
+      </div>
+      <div class="topbar-right">
+        <span class="demo-pill"><span class="dot"></span>Datos de demostración</span>
+        <div class="user-chip">
+          <div class="avatar">AD</div>
+          <div>
+            <div class="user-name">Administrador</div>
+            <div class="user-role" id="admin-fecha"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content" id="admin-content">
+      <section class="admin-view active" id="admin-view-inicio">
+        <div class="screen-head">
+          <div>
+            <h1>Resumen del negocio</h1>
+            <p id="admin-inicio-sub">Ace Club Tenis · Cali</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn btn-ghost" type="button">+ Reserva</button>
+            <button class="btn btn-ghost" type="button">+ Gasto</button>
+            <button class="btn btn-primary" type="button">+ Venta</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="k">Facturado en noviembre</div><div class="v">$ 18.420.000</div><div class="s">Facturas emitidas</div></div>
+          <div class="kpi"><div class="k">Recaudado en el mes</div><div class="v">$ 15.180.000</div><div class="s">Pagos de clientes</div></div>
+          <div class="kpi"><div class="k">Cartera pendiente</div><div class="v">$ 3.240.000</div><div class="s">Saldo por cobrar</div></div>
+          <div class="kpi good"><div class="k">Utilidad del mes</div><div class="v">$ 6.410.000</div><div class="s">Ingresos menos costos y gastos</div></div>
+          <div class="kpi"><div class="k">Ocupación de canchas hoy</div><div class="v">68,8%</div><div class="s">Sobre 16 horas por cancha</div></div>
+          <div class="kpi good"><div class="k">Suscriptores activos</div><div class="v">42</div><div class="s">Inventario sin alertas críticas</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Ingresos de los últimos 14 días</h3><span class="sub">Facturas emitidas</span></div>
+            <div class="panel-body"><div class="bars" id="admin-bars"></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Ingresos por línea</h3><span class="sub">Noviembre</span></div>
+            <div class="panel-body">
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#8FD23F 0 28%, #6BB4FF 28% 52%, #FFD419 52% 74%, #C9A0FF 74% 100%)">
+                  <div class="donut-hole"><span class="v">$ 18,4 M</span><span class="k">Base del mes</span></div>
+                </div>
+                <div class="legend">
+                  <div class="legend-item"><span class="legend-dot" style="background:#8FD23F"></span><span>Mostrador</span><span class="val">$ 5,1 M</span><span class="pct">28%</span></div>
+                  <div class="legend-item"><span class="legend-dot" style="background:#6BB4FF"></span><span>Canchas</span><span class="val">$ 4,4 M</span><span class="pct">24%</span></div>
+                  <div class="legend-item"><span class="legend-dot" style="background:#FFD419"></span><span>Clases</span><span class="val">$ 4,1 M</span><span class="pct">22%</span></div>
+                  <div class="legend-item"><span class="legend-dot" style="background:#C9A0FF"></span><span>Membresías</span><span class="val">$ 4,8 M</span><span class="pct">26%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2 equal">
+          <div class="panel">
+            <div class="panel-head"><h3>Agenda de hoy</h3><button class="link-btn" type="button" data-admin-view="agenda">Ver agenda</button></div>
+            <div class="panel-body tight">
+              <div class="list-item"><span class="li-time">07:00</span><div><div class="li-main">Laura Méndez</div><div class="li-sub">Cancha 1 · 1,5 h</div></div><div class="li-right"><span class="badge info">Reserva</span></div></div>
+              <div class="list-item"><span class="li-time">08:00</span><div><div class="li-main">Escuela infantil</div><div class="li-sub">Camila Ríos · 8/12 alumnos</div></div><div class="li-right"><span class="badge warn">Clase</span></div></div>
+              <div class="list-item"><span class="li-time">10:00</span><div><div class="li-main">Andrés Gómez</div><div class="li-sub">Cancha 2 · 1 h</div></div><div class="li-right"><span class="badge info">Reserva</span></div></div>
+              <div class="list-item"><span class="li-time">17:00</span><div><div class="li-main">Alto rendimiento</div><div class="li-sub">Diego Soto · 6/8 alumnos</div></div><div class="li-right"><span class="badge warn">Clase</span></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Alertas</h3><span class="sub">3 pendientes</span></div>
+            <div class="panel-body tight">
+              <div class="alert-item"><span class="alert-dot" style="background:var(--danger)"></span><div style="flex:1"><div class="li-main">Factura vencida FV-0142 · Sofía Ruiz</div></div><div class="li-right text-warn">$ 280.000</div></div>
+              <div class="alert-item"><span class="alert-dot" style="background:var(--warn)"></span><div style="flex:1"><div class="li-main">Membresía por vencer · Juan Pérez</div></div><div class="li-right text-warn">18 nov</div></div>
+              <div class="alert-item"><span class="alert-dot" style="background:var(--warn)"></span><div style="flex:1"><div class="li-main">Stock bajo · Pelotas Dunlop</div></div><div class="li-right text-warn">4 und</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Últimas ventas</h3><button class="link-btn" type="button" data-admin-view="ventas">Ver todas</button></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Línea</th><th class="right">Total</th><th class="right">DIAN</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">FV-0158</td><td>11 nov</td><td>Laura Méndez</td><td>Canchas</td><td class="right mono">$ 90.000</td><td class="right"><span class="badge ok">Aceptada</span></td></tr>
+                <tr><td class="mono">FV-0157</td><td>11 nov</td><td>Mostrador</td><td>Venta</td><td class="right mono">$ 145.000</td><td class="right"><span class="badge ok">Aceptada</span></td></tr>
+                <tr><td class="mono">FV-0156</td><td>10 nov</td><td>Andrés Gómez</td><td>Clases</td><td class="right mono">$ 320.000</td><td class="right"><span class="badge ok">Aceptada</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section class="admin-view" id="admin-view-agenda">
+        <div class="screen-head"><div><h1>Agenda de canchas</h1><p>Reservas del día · 3 canchas</p></div></div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Hora</th><th>Cancha 1</th><th>Cancha 2</th><th>Cancha 3</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">07:00</td><td>Laura Méndez</td><td>—</td><td>—</td></tr>
+            <tr><td class="mono">08:00</td><td>Escuela infantil</td><td>—</td><td>—</td></tr>
+            <tr><td class="mono">10:00</td><td>—</td><td>Andrés Gómez</td><td>—</td></tr>
+            <tr><td class="mono">19:00</td><td>—</td><td>—</td><td>Club de dobles</td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+      <section class="admin-view" id="admin-view-clases">
+        <div class="screen-head"><div><h1>Clases y entrenamientos</h1><p>Grupos activos</p></div></div>
+        <div class="modules-grid">
+          <div class="mod-card"><h3>Escuela infantil</h3><p>Lun–Vie 08:00 · 8/12 cupos</p></div>
+          <div class="mod-card"><h3>Alto rendimiento</h3><p>Lun–Jue 17:00 · 6/8 cupos</p></div>
+          <div class="mod-card"><h3>Adultos recreativos</h3><p>Sáb 09:00 · 10/14 cupos</p></div>
+        </div>
+      </section>
+      <section class="admin-view" id="admin-view-membresias">
+        <div class="screen-head"><div><h1>Membresías</h1><p>42 vigentes</p></div></div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Cliente</th><th>Plan</th><th>Fin</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>Juan Pérez</td><td>Gold</td><td>18 nov</td><td><span class="badge warn">Por vencer</span></td></tr>
+            <tr><td>Laura Méndez</td><td>Black</td><td>02 ene 27</td><td><span class="badge ok">Vigente</span></td></tr>
+            <tr><td>Andrés Gómez</td><td>Silver</td><td>01 mar 27</td><td><span class="badge ok">Vigente</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+      <section class="admin-view" id="admin-view-clientes">
+        <div class="screen-head"><div><h1>Clientes</h1><p>Directorio del club</p></div></div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th></tr></thead>
+          <tbody>
+            <tr><td>Laura Méndez</td><td class="mono">52.441.220</td><td>300 441 2290</td></tr>
+            <tr><td>Andrés Gómez</td><td class="mono">1.144.882.110</td><td>315 882 1104</td></tr>
+            <tr><td>Sofía Ruiz</td><td class="mono">1.130.667.441</td><td>317 667 4418</td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+      <section class="admin-view" id="admin-view-productos">
+        <div class="screen-head"><div><h1>Productos</h1><p>Inventario de mostrador</p></div></div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Producto</th><th>Stock</th><th class="right">Precio</th></tr></thead>
+          <tbody>
+            <tr><td>Pelotas Dunlop</td><td>4 und</td><td class="right mono">$ 48.000</td></tr>
+            <tr><td>Overgrip Wilson</td><td>22 und</td><td class="right mono">$ 18.000</td></tr>
+            <tr><td>Hidratación 500 ml</td><td>36 und</td><td class="right mono">$ 6.500</td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+      <section class="admin-view" id="admin-view-ventas">
+        <div class="screen-head"><div><h1>Ventas</h1><p>Facturas de demostración</p></div></div>
+        <div class="panel"><div class="table-wrap"><table>
+          <thead><tr><th>Número</th><th>Cliente</th><th class="right">Total</th><th class="right">DIAN</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">FV-0158</td><td>Laura Méndez</td><td class="right mono">$ 90.000</td><td class="right"><span class="badge ok">Aceptada</span></td></tr>
+            <tr><td class="mono">FV-0157</td><td>Mostrador</td><td class="right mono">$ 145.000</td><td class="right"><span class="badge ok">Aceptada</span></td></tr>
+            <tr><td class="mono">FV-0142</td><td>Sofía Ruiz</td><td class="right mono">$ 280.000</td><td class="right"><span class="badge warn">Vencida</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+      <section class="admin-view" id="admin-view-informes">
+        <div class="screen-head"><div><h1>Informes</h1><p>Líneas de negocio</p></div></div>
+        <div class="modules-grid">
+          <div class="mod-card"><h3>Canchas</h3><p>Ocupación 68,8% · $ 4,4 M</p></div>
+          <div class="mod-card"><h3>Clases</h3><p>3 grupos · $ 4,1 M</p></div>
+          <div class="mod-card"><h3>Membresías</h3><p>42 vigentes · $ 4,8 M</p></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s, ctx) { return (ctx || document).querySelector(s); };
+  var $$ = function (s, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(s)); };
+
+  /* ---------- Datos ---------- */
+  var CANCHAS = [
+    { id: 1, nombre: 'Cancha Central', tipo: 'Dura · Grado torneo', color: '#2F7D4F', color2: '#17402A' },
+    { id: 2, nombre: 'Cancha 2', tipo: 'Dura · Iluminación LED', color: '#2E6F63', color2: '#14352E' },
+    { id: 3, nombre: 'Cancha 3', tipo: 'Arcilla · Vista al jardín', color: '#7A5C2E', color2: '#3B2A12' }
+  ];
+  var TARIFA_DIA = 45000;
+  var TARIFA_NOCHE = 55000;
+  var IVA = 0.19;
+
+  var PLANES = [
+    {
+      id: 1,
+      nombre: 'Iniciación',
+      nivel: 'Principiante',
+      precio: 160000,
+      per: '4 clases al mes',
+      horario: 'Martes · 7:00 p. m.',
+      coach: 'Laura Peña',
+      coachIni: 'LP',
+      desc: 'Tu primera raqueta, sin vueltas. Fundamentos, golpes básicos y confianza en cancha.',
+      features: ['4 clases grupales de 60 min', 'Grupos de máximo 8 personas', 'Raqueta de cortesía', '10% de descuento en tienda']
+    },
+    {
+      id: 2,
+      nombre: 'Intermedio',
+      nivel: 'Intermedio',
+      precio: 280000,
+      per: '8 clases al mes',
+      horario: 'Jueves · 7:00 p. m.',
+      coach: 'Andrés Ruiz',
+      coachIni: 'AR',
+      featured: true,
+      desc: 'Consistencia, táctica y ritmo de partido para subir de nivel y disfrutar cada punto.',
+      features: ['8 clases grupales de 60 min', 'Grupos de máximo 6 personas', 'Videoanálisis mensual', '1 invitado al mes', '10% de descuento en tienda']
+    },
+    {
+      id: 3,
+      nombre: 'Competitivo',
+      nivel: 'Avanzado',
+      precio: 390000,
+      per: '12 clases al mes',
+      horario: 'Sábados · 9:00 a. m.',
+      coach: 'Andrés Ruiz',
+      coachIni: 'AR',
+      desc: 'Preparación física y técnica para torneos, con acompañamiento dentro y fuera de la cancha.',
+      features: ['12 clases de 60 min', '2 sesiones 1 a 1 al mes', 'Plan de entrenamiento personal', 'Acompañamiento en torneos']
+    }
+  ];
+
+  var PRODUCTOS = [
+    { id: 1, nombre: 'Pelotas Wilson Championship x3', categoria: 'Pelotas', precio: 32000, icono: 'balls', nota: 'Tubo x3' },
+    { id: 2, nombre: 'Overgrip Tourna', categoria: 'Accesorios', precio: 9500, icono: 'grip', nota: 'Unidad' },
+    { id: 3, nombre: 'Raqueta Babolat Boost', categoria: 'Equipos', precio: 480000, icono: 'racket', nota: 'Últimas unidades' },
+    { id: 4, nombre: 'Gorra Ace Club', categoria: 'Ropa', precio: 45000, icono: 'cap', nota: 'Talla única' },
+    { id: 5, nombre: 'Camiseta Ace Club', categoria: 'Ropa', precio: 75000, icono: 'shirt', nota: 'Tallas S – XL' },
+    { id: 6, nombre: 'Gatorade 500 ml', categoria: 'Consumibles', precio: 6000, icono: 'bottle', nota: 'Frío' }
+  ];
+
+  var ICONOS = {
+    balls: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="32" r="20"/><path d="M17 18c9 8 9 20 0 28M47 18c-9 8-9 20 0 28"/></svg>',
+    grip: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="22" y="10" width="20" height="44" rx="9"/><path d="M22 22h20M22 31h20M22 40h20M22 49h20"/><path d="M27 17h10"/></svg>',
+    racket: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="32" cy="21" rx="14" ry="17"/><path d="M28 9v24M32 8v26M36 9v24"/><path d="M32 38v17M28 55h8"/><path d="M27 37l5 4 5-4"/></svg>',
+    cap: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 38a19 19 0 0 1 38 0v3H13z"/><path d="M13 41c0 6 5 10 13 10h25"/><path d="M32 20v18"/><circle cx="32" cy="17" r="2"/></svg>',
+    shirt: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 11 11 19l6 11 7-4v27h16V26l7 4 6-11-13-8-4 4h-8z"/><path d="M27 15c0 3 2 5 5 5s5-2 5-5"/></svg>',
+    bottle: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M26 8h12v7l4 6v29a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V21l4-6z"/><path d="M22 30h20M26 8h12"/></svg>'
+  };
+
+  var ICO_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>';
+
+  var DIAS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+  var MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+  var HORAS = [];
+  for (var hIni = 6; hIni <= 21; hIni++) HORAS.push(hIni);
+
+  /* ---------- Utilidades ---------- */
+  function money(n) {
+    return '$' + new Intl.NumberFormat('es-CO').format(n);
+  }
+  function isoDe(d) {
+    var x = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return x.toISOString().slice(0, 10);
+  }
+  function fechaDeISO(iso) {
+    return new Date(iso + 'T00:00:00');
+  }
+  function hoyISO() {
+    return isoDe(new Date());
+  }
+  function ahoraMin() {
+    var d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+  function hhmm(h) {
+    return (h < 10 ? '0' : '') + h + ':00';
+  }
+  function fmtFecha(iso) {
+    var d = fechaDeISO(iso);
+    if (iso === hoyISO()) return 'Hoy, ' + d.getDate() + ' ' + MESES[d.getMonth()].toLowerCase();
+    var dia = DIAS[d.getDay()];
+    return dia.charAt(0) + dia.slice(1).toLowerCase() + ', ' + d.getDate() + ' ' + MESES[d.getMonth()].toLowerCase();
+  }
+  function tarifaHora(h) {
+    return h >= 18 ? TARIFA_NOCHE : TARIFA_DIA;
+  }
+  function hash(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function ocupado(canchaId, fecha, hora) {
+    var peso = hora >= 18 ? 22 : (hora >= 12 && hora < 14 ? 6 : 0);
+    return hash(canchaId + '|' + fecha + '|' + hora) % 100 < 30 + peso;
+  }
+  function rand4() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+  }
+
+  var FECHAS = (function () {
+    var arr = [];
+    var base = new Date();
+    base.setHours(12, 0, 0, 0);
+    for (var i = 0; i < 14; i++) {
+      var d = new Date(base);
+      d.setDate(d.getDate() + i);
+      arr.push(isoDe(d));
+    }
+    return arr;
+  })();
+
+  /* ---------- Estado de la reserva ---------- */
+  var booking = { canchaId: 1, fecha: FECHAS[0], hora: null };
+
+  function canchaActual() {
+    for (var i = 0; i < CANCHAS.length; i++) {
+      if (CANCHAS[i].id === booking.canchaId) return CANCHAS[i];
+    }
+    return CANCHAS[0];
+  }
+  function estadoSlot(h) {
+    if (booking.fecha === hoyISO() && h * 60 < ahoraMin() + 30) return 'pasado';
+    if (ocupado(booking.canchaId, booking.fecha, h)) return 'ocupado';
+    return 'libre';
+  }
+
+  /* ---------- Render de la reserva ---------- */
+  function renderCourtOptions() {
+    $('#court-options').innerHTML = CANCHAS.map(function (c) {
+      var activa = c.id === booking.canchaId;
+      return '<button class="court-opt' + (activa ? ' is-active' : '') + '" type="button" data-cancha="' + c.id + '" aria-pressed="' + activa + '">' +
+        '<span class="court-swatch" style="background:linear-gradient(145deg,' + c.color + ',' + c.color2 + ')"><i></i></span>' +
+        '<span class="court-opt-main"><strong>' + c.nombre + '</strong><small>' + c.tipo + '</small></span>' +
+        '<span class="court-opt-price">' + money(TARIFA_DIA) + '<small>/h · día</small></span>' +
+      '</button>';
+    }).join('');
+  }
+
+  function renderDates() {
+    $('#date-strip').innerHTML = FECHAS.map(function (iso, i) {
+      var d = fechaDeISO(iso);
+      var dow = i === 0 ? 'hoy' : DIAS[d.getDay()];
+      var activa = iso === booking.fecha;
+      return '<button class="date-btn' + (activa ? ' is-active' : '') + '" type="button" data-fecha="' + iso + '" aria-pressed="' + activa + '">' +
+        '<span class="d-dow">' + dow + '</span>' +
+        '<span class="d-num">' + d.getDate() + '</span>' +
+        '<span class="d-mon">' + MESES[d.getMonth()] + '</span>' +
+      '</button>';
+    }).join('');
+  }
+
+  function renderSlots() {
+    $('#slot-grid').innerHTML = HORAS.map(function (h) {
+      var estado = estadoSlot(h);
+      var sel = booking.hora === h;
+      var noche = h >= 18;
+      var clases = 'slot' + (sel ? ' is-active' : '') + (estado !== 'libre' ? ' is-' + estado : '') + (noche ? ' is-night' : '');
+      var titulo = estado === 'ocupado' ? 'Horario ocupado' : estado === 'pasado' ? 'Horario ya pasó' : 'Reservar a las ' + hhmm(h) + ' · ' + money(tarifaHora(h));
+      return '<button class="' + clases + '" type="button" data-hora="' + h + '"' + (estado !== 'libre' ? ' disabled' : '') + ' title="' + titulo + '" aria-pressed="' + sel + '">' +
+        '<span>' + hhmm(h) + '</span><small>' + money(tarifaHora(h)) + '</small>' +
+      '</button>';
+    }).join('');
+  }
+
+  function renderSummary() {
+    var c = canchaActual();
+    var h = booking.hora;
+    $('#sum-swatch').style.background = 'linear-gradient(145deg,' + c.color + ',' + c.color2 + ')';
+    $('#sum-cancha').textContent = c.nombre;
+    $('#sum-tipo').textContent = c.tipo;
+    $('#sum-fecha').textContent = fmtFecha(booking.fecha);
+    $('#sum-hora').textContent = h === null ? 'Elige una hora' : hhmm(h) + ' – ' + hhmm(h + 1);
+    $('#sum-tarifa').textContent = h === null ? '—' : (h >= 18 ? 'Noche · ' + money(TARIFA_NOCHE) : 'Día · ' + money(TARIFA_DIA));
+
+    var sub = h === null ? 0 : tarifaHora(h);
+    var iva = Math.round(sub * IVA);
+    $('#sum-sub').textContent = money(sub);
+    $('#sum-iva').textContent = money(iva);
+    $('#sum-total').textContent = money(sub + iva);
+    $('#btn-confirm').disabled = h === null;
+    syncMobileBar();
+  }
+
+  function renderBooking() {
+    renderCourtOptions();
+    renderDates();
+    renderSlots();
+    renderSummary();
+  }
+
+  function syncMobileBar() {
+    var bar = $('#mobile-bar');
+    if (!bar) return;
+    var show = document.body.dataset.view === 'canchas' && booking.hora !== null;
+    bar.hidden = !show;
+    document.body.classList.toggle('tiene-barra', show);
+    if (show) $('#mb-total').textContent = $('#sum-total').textContent;
+  }
+
+  $('#mb-confirm').addEventListener('click', function () {
+    $('#btn-confirm').click();
+  });
+
+  function avanzarPaso(id) {
+    if (!window.matchMedia('(max-width: 700px)').matches) return;
+    var step = $(id);
+    if (!step) return;
+    setTimeout(function () {
+      step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  }
+
+  $('#court-options').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-cancha]');
+    if (!btn) return;
+    var id = +btn.dataset.cancha;
+    if (id === booking.canchaId) return;
+    booking.canchaId = id;
+    booking.hora = null;
+    renderBooking();
+    avanzarPaso('#paso-hora');
+  });
+
+  $('#date-strip').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-fecha]');
+    if (!btn) return;
+    if (btn.dataset.fecha === booking.fecha) return;
+    booking.fecha = btn.dataset.fecha;
+    booking.hora = null;
+    renderBooking();
+    avanzarPaso('#paso-cancha');
+  });
+
+  $('#slot-grid').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-hora]');
+    if (!btn || btn.disabled) return;
+    booking.hora = +btn.dataset.hora;
+    renderSlots();
+    renderSummary();
+  });
+
+  $('#btn-confirm').addEventListener('click', function () {
+    if (booking.hora === null) return;
+    var c = canchaActual();
+    var sub = tarifaHora(booking.hora);
+    var iva = Math.round(sub * IVA);
+    var total = sub + iva;
+    var code = 'AC-' + rand4();
+
+    openModal(
+      '<div class="success">' +
+        '<div class="success-icon">' + ICO_CHECK + '</div>' +
+        '<h3 id="modal-title">Reserva confirmada</h3>' +
+        '<p>Tu cancha quedó apartada. Muestra este código en recepción cuando llegues.</p>' +
+        '<div class="code-pill">' + code + '</div>' +
+        '<div class="success-detail"><strong>' + c.nombre + '</strong><br>' +
+          fmtFecha(booking.fecha) + ' · ' + hhmm(booking.hora) + ' – ' + hhmm(booking.hora + 1) + '<br>' +
+          (booking.hora >= 18 ? 'Tarifa noche' : 'Tarifa día') + ' · IVA incluido<br>' +
+          'Total: ' + money(total) +
+        '</div>' +
+        '<button class="btn btn-primary" type="button" data-close>Listo</button>' +
+      '</div>'
+    );
+  });
+
+  /* ---------- Planes ---------- */
+  function renderPlans() {
+    $('#plans-grid').innerHTML = PLANES.map(function (p) {
+      return '<article class="plan' + (p.featured ? ' featured' : '') + '">' +
+        (p.featured ? '<span class="plan-badge">Más elegido</span>' : '') +
+        '<span class="plan-name">' + p.nivel + '</span>' +
+        '<h3>' + p.nombre + '</h3>' +
+        '<p class="plan-desc">' + p.desc + '</p>' +
+        '<div class="plan-price"><span class="cur">$</span><strong>' + new Intl.NumberFormat('es-CO').format(p.precio) + '</strong></div>' +
+        '<p class="plan-per">' + p.per + ' · ' + p.horario + '</p>' +
+        '<div class="coach">' +
+          '<span class="avatar-ini" aria-hidden="true">' + p.coachIni + '</span>' +
+          '<div><strong>' + p.coach + '</strong><span>Entrenador</span></div>' +
+        '</div>' +
+        '<ul>' + p.features.map(function (f) { return '<li>' + ICO_CHECK + '<span>' + f + '</span></li>'; }).join('') + '</ul>' +
+        '<button class="btn ' + (p.featured ? 'btn-primary' : 'btn-soft') + '" type="button" data-plan="' + p.id + '">Quiero este plan</button>' +
+      '</article>';
+    }).join('');
+  }
+
+  $('#plans-grid').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-plan]');
+    if (!btn) return;
+    var plan = null;
+    for (var i = 0; i < PLANES.length; i++) {
+      if (PLANES[i].id === +btn.dataset.plan) plan = PLANES[i];
+    }
+    if (!plan) return;
+    openPlanModal(plan);
+  });
+
+  function openPlanModal(p) {
+    openModal(
+      '<div class="modal-heading">' +
+        '<span class="eyebrow">Plan de entrenamiento</span>' +
+        '<h3 id="modal-title">' + p.nombre + '</h3>' +
+        '<p>' + p.per + ' · ' + p.horario + ' · ' + p.coach + '.</p>' +
+      '</div>' +
+      '<div class="modal-summary"><div><strong>Plan ' + p.nombre + '</strong><span>' + p.nivel + '</span></div><b>' + money(p.precio) + '</b></div>' +
+      '<form id="plan-form" novalidate>' +
+        '<label class="field"><span>Nombre completo</span><input class="input" id="p-nombre" type="text" autocomplete="name" placeholder="Tu nombre"></label>' +
+        '<label class="field"><span>Teléfono</span><input class="input" id="p-tel" type="tel" autocomplete="tel" placeholder="Ej. 300 123 4567"></label>' +
+        '<p class="form-error" id="p-error" role="alert" hidden></p>' +
+        '<button class="btn btn-primary btn-block" type="submit">Solicitar plan</button>' +
+        '<p class="form-note">Sin pagos en línea. Te escribimos para agendar tu primera clase.</p>' +
+      '</form>',
+      function (panel) {
+        var form = $('#plan-form', panel);
+        var err = $('#p-error', panel);
+        form.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          err.hidden = true;
+          var nombre = $('#p-nombre', panel).value.trim();
+          var tel = $('#p-tel', panel).value.trim();
+          if (!nombre) {
+            err.textContent = 'Escribe tu nombre.';
+            err.hidden = false;
+            $('#p-nombre', panel).focus();
+            return;
+          }
+          if (tel.replace(/\D/g, '').length < 7) {
+            err.textContent = 'Escribe un teléfono válido (mínimo 7 números).';
+            err.hidden = false;
+            $('#p-tel', panel).focus();
+            return;
+          }
+          var code = 'PL-' + rand4();
+          openModal(
+            '<div class="success">' +
+              '<div class="success-icon">' + ICO_CHECK + '</div>' +
+              '<h3 id="modal-title">¡Plan solicitado!</h3>' +
+              '<p>Gracias, ' + nombre + '. Te contactaremos al ' + tel + ' para coordinar tu primera clase.</p>' +
+              '<div class="code-pill">' + code + '</div>' +
+              '<div class="success-detail"><strong>Plan ' + p.nombre + '</strong><br>' + p.per + '<br>' + p.horario + ' · ' + p.coach + '</div>' +
+              '<button class="btn btn-primary" type="button" data-close>Listo</button>' +
+            '</div>'
+          );
+        });
+      }
+    );
+  }
+
+  /* ---------- Tienda y carrito ---------- */
+  var cart = new Map();
+
+  function renderProducts() {
+    $('#products-grid').innerHTML = PRODUCTOS.map(function (p) {
+      return '<article class="product">' +
+        '<div class="product-visual">' + ICONOS[p.icono] + '</div>' +
+        '<span class="product-cat">' + p.categoria + '</span>' +
+        '<h3>' + p.nombre + '</h3>' +
+        '<div class="product-foot">' +
+          '<div class="product-price"><strong>' + money(p.precio) + '</strong><span>' + p.nota + '</span></div>' +
+          '<button class="btn btn-soft btn-sm" type="button" data-add="' + p.id + '">Agregar</button>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+  }
+
+  function producto(id) {
+    for (var i = 0; i < PRODUCTOS.length; i++) {
+      if (PRODUCTOS[i].id === id) return PRODUCTOS[i];
+    }
+    return null;
+  }
+  function cartCount() {
+    var n = 0;
+    cart.forEach(function (q) { n += q; });
+    return n;
+  }
+  function cartTotal() {
+    var total = 0;
+    cart.forEach(function (q, id) { total += producto(id).precio * q; });
+    return total;
+  }
+
+  function renderCart() {
+    var count = cartCount();
+    $('#cart-count').textContent = count + (count === 1 ? ' producto' : ' productos');
+    var body = $('#cart-body');
+
+    if (!cart.size) {
+      body.innerHTML = '<p class="cart-empty">Tu carrito está vacío. Agrega pelotas, grips o ropa y recoge tu pedido en recepción.</p>';
+      return;
+    }
+
+    var rows = '';
+    cart.forEach(function (q, id) {
+      var p = producto(id);
+      rows += '<div class="cart-row">' +
+        '<div class="cart-prod"><strong>' + p.nombre + '</strong><span>' + money(p.precio) + ' c/u · ' + p.nota + '</span></div>' +
+        '<div class="qty">' +
+          '<button type="button" data-dec="' + id + '" aria-label="Quitar una unidad de ' + p.nombre + '">−</button>' +
+          '<span>' + q + '</span>' +
+          '<button type="button" data-inc="' + id + '" aria-label="Agregar una unidad de ' + p.nombre + '">+</button>' +
+        '</div>' +
+        '<strong class="cart-line">' + money(p.precio * q) + '</strong>' +
+        '<button class="cart-remove" type="button" data-remove="' + id + '">Quitar</button>' +
+      '</div>';
+    });
+
+    body.innerHTML = rows +
+      '<div class="cart-foot">' +
+        '<div class="cart-total"><span>Total</span><strong>' + money(cartTotal()) + '</strong></div>' +
+        '<button class="btn btn-primary" type="button" id="btn-checkout">Hacer pedido</button>' +
+      '</div>';
+  }
+
+  $('#products-grid').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-add]');
+    if (!btn) return;
+    var id = +btn.dataset.add;
+    cart.set(id, (cart.get(id) || 0) + 1);
+    renderCart();
+    toast(producto(id).nombre + ' agregado al carrito');
+  });
+
+  $('#cart-body').addEventListener('click', function (e) {
+    var inc = e.target.closest('[data-inc]');
+    if (inc) {
+      var idInc = +inc.dataset.inc;
+      cart.set(idInc, cart.get(idInc) + 1);
+      renderCart();
+      return;
+    }
+    var dec = e.target.closest('[data-dec]');
+    if (dec) {
+      var idDec = +dec.dataset.dec;
+      var q = cart.get(idDec) - 1;
+      if (q > 0) cart.set(idDec, q);
+      else cart.delete(idDec);
+      renderCart();
+      return;
+    }
+    var rm = e.target.closest('[data-remove]');
+    if (rm) {
+      cart.delete(+rm.dataset.remove);
+      renderCart();
+      return;
+    }
+    if (e.target.closest('#btn-checkout')) {
+      if (cart.size) openCheckout();
+    }
+  });
+
+  function openCheckout() {
+    var rows = '';
+    cart.forEach(function (q, id) {
+      var p = producto(id);
+      rows += '<div><span>' + q + ' × ' + p.nombre + '</span><strong>' + money(p.precio * q) + '</strong></div>';
+    });
+    var total = cartTotal();
+
+    openModal(
+      '<div class="modal-heading">' +
+        '<span class="eyebrow">Tienda del club</span>' +
+        '<h3 id="modal-title">Tu pedido</h3>' +
+        '<p>Recoges en recepción al llegar al club. No hay pagos en línea.</p>' +
+      '</div>' +
+      '<div class="modal-list">' + rows +
+        '<div class="modal-total"><span>Total</span><b>' + money(total) + '</b></div>' +
+      '</div>' +
+      '<form id="shop-form" novalidate>' +
+        '<label class="field"><span>Nombre completo</span><input class="input" id="s-nombre" type="text" autocomplete="name" placeholder="Tu nombre"></label>' +
+        '<label class="field"><span>Teléfono</span><input class="input" id="s-tel" type="tel" autocomplete="tel" placeholder="Ej. 300 123 4567"></label>' +
+        '<p class="form-error" id="s-error" role="alert" hidden></p>' +
+        '<button class="btn btn-primary btn-block" type="submit">Confirmar pedido</button>' +
+        '<p class="form-note">Separamos tus productos por 24 horas.</p>' +
+      '</form>',
+      function (panel) {
+        var form = $('#shop-form', panel);
+        var err = $('#s-error', panel);
+        form.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          err.hidden = true;
+          var nombre = $('#s-nombre', panel).value.trim();
+          var tel = $('#s-tel', panel).value.trim();
+          if (!nombre) {
+            err.textContent = 'Escribe tu nombre.';
+            err.hidden = false;
+            $('#s-nombre', panel).focus();
+            return;
+          }
+          if (tel.replace(/\D/g, '').length < 7) {
+            err.textContent = 'Escribe un teléfono válido (mínimo 7 números).';
+            err.hidden = false;
+            $('#s-tel', panel).focus();
+            return;
+          }
+          var code = 'TI-' + rand4();
+          var lines = '';
+          cart.forEach(function (q, id) {
+            var p = producto(id);
+            lines += q + ' × ' + p.nombre + '<br>';
+          });
+          cart.clear();
+          renderCart();
+          openModal(
+            '<div class="success">' +
+              '<div class="success-icon">' + ICO_CHECK + '</div>' +
+              '<h3 id="modal-title">Pedido recibido</h3>' +
+              '<p>Gracias, ' + nombre + '. Te esperamos en recepción para entregarte tu compra.</p>' +
+              '<div class="code-pill">' + code + '</div>' +
+              '<div class="success-detail">' + lines + '<strong>Total: ' + money(total) + '</strong></div>' +
+              '<button class="btn btn-primary" type="button" data-close>Listo</button>' +
+            '</div>'
+          );
+        });
+      }
+    );
+  }
+
+  /* ---------- Modal ---------- */
+  var lastFocus = null;
+
+  function openModal(html, onReady) {
+    var modal = $('#modal');
+    var panel = $('.modal-panel', modal);
+    $('#toast').classList.remove('show');
+    $('#modal-body').innerHTML = html;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    lastFocus = document.activeElement;
+    panel.scrollTop = 0;
+    if (onReady) onReady(panel);
+    var target = panel.querySelector('input, select, textarea, button:not(.modal-close)') || panel;
+    setTimeout(function () { target.focus(); }, 30);
+  }
+
+  function closeModal() {
+    var modal = $('#modal');
+    if (!modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  $('#modal').addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) closeModal();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var modal = $('#modal');
+    if (!modal.classList.contains('open')) return;
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+    if (e.key === 'Tab') {
+      var focusables = $$('a[href], button:not([disabled]), input, select, textarea', modal).filter(function (el) {
+        return el.offsetParent !== null;
+      });
+      if (!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  /* ---------- Header ---------- */
+  var header = $('#site-header');
+  var navToggle = $('#nav-toggle');
+  var navLinks = $('#nav-links');
+
+  navToggle.addEventListener('click', function () {
+    var open = header.classList.toggle('nav-open');
+    navToggle.setAttribute('aria-expanded', String(open));
+    navToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+  });
+
+  $$('a', navLinks).forEach(function (a) {
+    a.addEventListener('click', function () {
+      header.classList.remove('nav-open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  /* ---------- Vistas ---------- */
+  var VIEWS = { inicio: 'view-inicio', canchas: 'view-canchas', planes: 'view-planes', tienda: 'view-tienda' };
+  var viewEls = $$('#shell-cliente .view');
+
+  function showView(name, anchor) {
+    if (!VIEWS[name]) name = 'inicio';
+    document.body.dataset.view = name;
+    viewEls.forEach(function (v) {
+      v.classList.toggle('is-active', v.id === VIEWS[name]);
+    });
+    $$('a', navLinks).forEach(function (a) {
+      var active = a.getAttribute('href') === '#' + name;
+      a.classList.toggle('is-active', active);
+      if (active) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    syncMobileBar();
+    if (anchor) {
+      var target = $(anchor);
+      if (target) {
+        target.scrollIntoView({ behavior: 'instant', block: 'start' });
+        return;
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function route() {
+    var hash = location.hash.slice(1);
+    if (hash === 'contacto') {
+      showView('inicio', '#contacto');
+      return;
+    }
+    showView(VIEWS[hash] ? hash : 'inicio');
+  }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var hash = a.getAttribute('href').slice(1);
+    if (hash === 'contacto') {
+      e.preventDefault();
+      if (location.hash === '#contacto') showView('inicio', '#contacto');
+      else location.hash = 'contacto';
+      return;
+    }
+    if (!VIEWS[hash]) return;
+    e.preventDefault();
+    if (location.hash === '#' + hash) showView(hash);
+    else location.hash = hash;
+  });
+
+  window.addEventListener('hashchange', route);
+
+  function onScroll() {
+    header.classList.toggle('scrolled', window.scrollY > 8);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* ---------- Toast ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
+  }
+
+  /* ---------- Inicio ---------- */
+  renderBooking();
+  renderPlans();
+  renderProducts();
+  renderCart();
+  onScroll();
+  route();
+
+  /* ---------- Modo cliente / admin ---------- */
+  var modeBtn = $('#mode-switch');
+  var adminTitles = {
+    inicio: 'Inicio', agenda: 'Agenda de canchas', clases: 'Clases',
+    membresias: 'Membresías', clientes: 'Clientes', productos: 'Productos',
+    ventas: 'Ventas', informes: 'Informes'
+  };
+  var adminBarsReady = false;
+
+  function setMode(admin) {
+    document.body.classList.toggle('modo-admin', admin);
+    document.body.classList.toggle('modal-open', false);
+    modeBtn.textContent = admin ? 'Cliente' : 'Admin';
+    $('#shell-admin').setAttribute('aria-hidden', admin ? 'false' : 'true');
+    $('#shell-cliente').setAttribute('aria-hidden', admin ? 'true' : 'false');
+    if (admin) {
+      fillAdminBars();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function fillAdminBars() {
+    if (adminBarsReady) return;
+    var bars = $('#admin-bars');
+    if (!bars) return;
+    var heights = [42, 55, 38, 70, 48, 88, 62, 51, 74, 40, 66, 91, 58, 72];
+    var today = new Date();
+    bars.innerHTML = heights.map(function (h, i) {
+      var d = new Date(today);
+      d.setDate(d.getDate() - (13 - i));
+      var lab = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+      return '<div class="bar-col"><div class="bar-track"><div class="bar" style="height:' + h + '%"></div></div><span class="bar-label">' + lab + '</span></div>';
+    }).join('');
+    var fechaLarga = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+    var fe = $('#admin-fecha');
+    var sub = $('#admin-inicio-sub');
+    if (fe) fe.textContent = fechaLarga;
+    if (sub) sub.textContent = fechaLarga + ' · Ace Club Tenis';
+    adminBarsReady = true;
+  }
+
+  function showAdminView(name) {
+    if (!adminTitles[name]) name = 'inicio';
+    $$('#shell-admin .admin-view').forEach(function (el) {
+      el.classList.toggle('active', el.id === 'admin-view-' + name);
+    });
+    $$('#admin-nav .nav-item').forEach(function (el) {
+      el.classList.toggle('active', el.getAttribute('data-admin-view') === name);
+    });
+    $('#admin-crumb').textContent = adminTitles[name];
+    document.body.classList.remove('nav-open');
+  }
+
+  modeBtn.addEventListener('click', function () {
+    setMode(!document.body.classList.contains('modo-admin'));
+  });
+  var footerAdmin = $('#footer-admin');
+  if (footerAdmin) footerAdmin.addEventListener('click', function () { setMode(true); });
+
+  $('#admin-nav').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-admin-view]');
+    if (btn) showAdminView(btn.getAttribute('data-admin-view'));
+  });
+  $('#admin-content').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-admin-view]');
+    if (btn) showAdminView(btn.getAttribute('data-admin-view'));
+  });
+  $('#admin-menu').addEventListener('click', function () {
+    document.body.classList.toggle('nav-open');
+  });
+})();
+</script>
+</body>
+</html>

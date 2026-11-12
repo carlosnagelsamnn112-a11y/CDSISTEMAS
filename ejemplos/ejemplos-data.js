@@ -13,6 +13,18 @@
 
 const ejemplosData = [
   {
+    titulo: "Ace Club Tenis",
+    categoria: "SISTEMA DE GESTIÓN",
+    descripcion: "Sitio y panel para un club de tenis: reservas de canchas, clientes y administración en un solo archivo. Pensado para clubes y academias que alquilan horas y organizan entrenamientos.",
+    archivo: "Ejemplo-Sistema-tennis.html"
+  },
+  {
+    titulo: "Torneos de tenis",
+    categoria: "SISTEMA DE GESTIÓN",
+    descripcion: "Vista pública y panel de administración para torneos de tenis: cuadro, partidos y seguimiento del evento para jugadores y organizadores.",
+    archivo: "Ejemplo-Torneos-tenis.html"
+  },
+  {
     titulo: "Ferretera del Norte",
     categoria: "SISTEMA DE INVENTARIO",
     descripcion: "Sistema de gestión de inventarios para ferreterías con control de stock en tiempo real, alertas de existencias bajas, registro de productos y simulación de ventas con facturación.",
