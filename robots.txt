@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /Base.html
+Disallow: /sheets-config.js
+Disallow: /semilla-potenciales.js
+Disallow: /Codigo-Apps-Script.js
