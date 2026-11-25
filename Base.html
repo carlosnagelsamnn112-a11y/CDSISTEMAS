@@ -487,10 +487,20 @@
       text-overflow: ellipsis;
     }
 
-    .tabla th:nth-child(1), .tabla td:nth-child(1) { width: 28%; padding-right: 0.6rem; }
-    .tabla th:nth-child(2), .tabla td:nth-child(2) { width: 22%; padding-right: 0.6rem; }
-    .tabla th:nth-child(3), .tabla td:nth-child(3) { width: 30%; padding-right: 0.6rem; }
-    .tabla th:nth-child(4), .tabla td:nth-child(4) { width: 20%; text-align: right; }
+    .tabla th:nth-child(1), .tabla td:nth-child(1) { width: 30%; padding-right: 0.6rem; }
+    .tabla th:nth-child(2), .tabla td:nth-child(2) { width: 20%; padding-right: 0.6rem; }
+    .tabla th:nth-child(3), .tabla td:nth-child(3) { width: 26%; padding-right: 0.6rem; }
+    .tabla th:nth-child(4), .tabla td:nth-child(4) { width: 24%; text-align: right; }
+
+    .tabla.con-accion th:nth-child(1), .tabla.con-accion td:nth-child(1) { width: 26%; }
+    .tabla.con-accion th:nth-child(2), .tabla.con-accion td:nth-child(2) { width: 17%; }
+    .tabla.con-accion th:nth-child(3), .tabla.con-accion td:nth-child(3) { width: 20%; }
+    .tabla.con-accion th:nth-child(4), .tabla.con-accion td:nth-child(4) { width: 15%; text-align: left; padding-right: 0.6rem; }
+    .tabla.con-accion th:nth-child(5), .tabla.con-accion td:nth-child(5) { width: 22%; text-align: right; }
+
+    .estado-envio { font-size: 0.8rem; }
+    .tabla td.estado-envio.es-enviado { color: var(--ok); }
+    .tabla td.estado-envio.es-en-curso { color: var(--ink); }
 
     .tabla td:nth-child(2),
     .tabla td:nth-child(3),
@@ -498,12 +508,20 @@
 
     .tabla tbody tr { transition: color 0.2s ease; }
     .enlace-fila {
+      display: block;
+      max-width: 100%;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
       letter-spacing: 0;
       text-transform: none;
       font-size: inherit;
       color: inherit;
       padding: 0;
       text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .enlace-fila:hover { color: #fff; }
 
@@ -513,6 +531,79 @@
       text-align: center;
       margin: 1.4rem 0 0;
     }
+
+    /* ============================================================
+       BARRA DE VOLVER (fija bajo el encabezado)
+    ============================================================ */
+    .barra-volver {
+      background: #0b0d10;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .barra-volver-inner {
+      max-width: 768px;
+      margin: 0 auto;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .barra-volver .btn { flex-shrink: 0; }
+    .ruta {
+      min-width: 0;
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ============================================================
+       ENVÍO DE MENSAJES
+    ============================================================ */
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 1.4rem;
+    }
+    .filtros .btn.activo {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .orden {
+      padding: 12px 0;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--ink);
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--line-strong);
+      outline: none;
+      cursor: pointer;
+    }
+    .orden option { background: #161616; color: var(--ink); }
+
+    .card-envio {
+      margin: 16px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-envio.es-enviado {
+      border-color: rgba(143, 201, 154, 0.5);
+      color: var(--ok);
+    }
+    .card.card-enviada { border-color: rgba(143, 201, 154, 0.28); }
+    .card.card-enviada .card-mensaje-texto,
+    .card.card-enviada textarea { opacity: 0.6; }
+
+    .resumen-cat { margin-top: 24px; }
 
     /* ============================================================
        RESPONSIVE
@@ -546,6 +637,9 @@
       .tabla { min-width: 400px; }
 
       .eliminar { margin-left: 1.2rem; }
+
+      .barra-volver-inner { padding: 8px 16px; }
+      .app-main { padding: 32px 16px 64px; }
     }
 
     /* ============================================================
@@ -571,6 +665,12 @@
         </a>
       </div>
     </header>
+    <nav id="barra-volver" class="barra-volver" aria-label="Navegación" hidden>
+      <div class="barra-volver-inner">
+        <button type="button" class="btn btn-ghost" id="btn-atras" data-accion="atras">← Volver</button>
+        <span id="ruta" class="ruta"></span>
+      </div>
+    </nav>
   </div>
 
   <main class="app-main">
@@ -602,7 +702,7 @@
       <button type="button" class="btn btn-primary" data-accion="crear">Crear <span class="btn-arrow">→</span></button>
       <button type="button" class="btn btn-outline" data-accion="guardados">Guardados <span class="btn-arrow">→</span></button>
     </div>
-    <button type="button" class="btn btn-ghost volver" data-accion="principal">← Volver</button>
+    <p id="resumen-potenciales" class="estado-nube resumen-cat"></p>
   </div>
 
   <!-- PANTALLA 3: submenú Clientes -->
@@ -613,7 +713,7 @@
       <button type="button" class="btn btn-primary" data-accion="crear">Crear <span class="btn-arrow">→</span></button>
       <button type="button" class="btn btn-outline" data-accion="guardados">Guardados <span class="btn-arrow">→</span></button>
     </div>
-    <button type="button" class="btn btn-ghost volver" data-accion="principal">← Volver</button>
+    <p id="resumen-clientes" class="estado-nube resumen-cat"></p>
   </div>
 
   <!-- PANTALLA 4: Crear (sirve a Potenciales y a Clientes) -->
@@ -746,8 +846,6 @@
 
       <p id="mensaje" class="mensaje" role="status" aria-live="polite"></p>
     </form>
-
-    <button type="button" class="btn btn-ghost volver" data-accion="submenu">← Volver</button>
   </div>
 
   <!-- PANTALLA 5: Guardados (sirve a Potenciales y a Clientes) -->
@@ -755,10 +853,16 @@
     <h1 id="titulo-guardados">Guardados</h1>
     <div class="barra-lista">
       <input id="buscar-guardados" class="buscar" type="search" placeholder="Buscar por nombre, teléfono o ciudad" aria-label="Buscar registros">
+      <select id="orden-guardados" class="orden" aria-label="Ordenar registros">
+        <option value="nombre">Nombre A–Z</option>
+        <option value="recientes">Más recientes</option>
+        <option value="envio">Último envío</option>
+      </select>
+      <button type="button" class="btn btn-outline" data-accion="exportar-csv">Exportar CSV</button>
       <button type="button" class="btn btn-outline" data-accion="exportar">Exportar JSON</button>
     </div>
+    <div id="filtros-envio" class="filtros" role="group" aria-label="Filtrar por envío de mensajes"></div>
     <div id="contenedor-tabla"></div>
-    <button type="button" class="btn btn-ghost volver" data-accion="submenu">← Volver</button>
   </div>
 
   <!-- PANTALLA 6: Detalle -->
@@ -768,7 +872,6 @@
     <div id="detalle-contenido" class="detalle"></div>
 
     <div class="acciones-detalle">
-      <button type="button" class="btn btn-ghost volver" data-accion="guardados">← Volver</button>
       <button type="button" class="btn btn-primary" data-accion="editar">Editar</button>
       <button type="button" class="btn btn-outline" id="btn-pasar-cliente" data-accion="pasar-cliente">Pasar a cliente</button>
       <button type="button" class="btn btn-danger" id="btn-eliminar" data-accion="eliminar">Eliminar</button>
@@ -803,6 +906,7 @@
     ============================================================ */
     const ALMACEN = 'cdsistemas.objetivos.v2';
     const ALMACEN_ANTERIOR = 'cdsistemas.objetivos.v1';
+    const ALMACEN_PENDIENTES = 'cdsistemas.objetivos.pendientes';
 
     const TEXTOS = {
       saludo: 'Buen día, le escribimos del equipo de ventas de CDSISTEMAS, un emprendimiento de soluciones y herramientas digitales para empresas, ubicado en Bucaramanga.',
@@ -928,28 +1032,130 @@
     function bloquesMensaje(registro) {
       const r = registro || {};
       const bloques = [
-        { titulo: 'Primer mensaje', texto: TEXTOS.saludo },
-        { titulo: 'Segundo mensaje', texto: segundoMensaje(r) }
+        { clave: 'saludo', titulo: 'Primer mensaje', texto: TEXTOS.saludo },
+        { clave: 'segundo', titulo: 'Segundo mensaje', texto: segundoMensaje(r) }
       ];
       if (r.contacto === 'atencion') {
-        bloques.push({ titulo: 'Mensaje de contacto', texto: TEXTOS.contactoAtencion });
+        bloques.push({ clave: 'contacto', titulo: 'Mensaje de contacto', texto: TEXTOS.contactoAtencion });
       }
       bloques.push({ tipo: 'oferta' });
       if (r.oferta === 'no') {
-        bloques.push({ titulo: 'Mensaje de agradecimiento', texto: TEXTOS.agradecimiento });
+        bloques.push({ clave: 'agradecimiento', titulo: 'Mensaje de agradecimiento', texto: TEXTOS.agradecimiento });
         return bloques;
       }
       bloques.push({
+        clave: 'propuesta',
         titulo: 'Propuesta',
         texto: String(r.propuesta || '').trim(),
         editable: true
       });
-      bloques.push({ titulo: 'Prueba', texto: TEXTOS.prueba });
+      bloques.push({ clave: 'prueba', titulo: 'Prueba', texto: TEXTOS.prueba });
       bloques.push({
+        clave: 'agenda',
         titulo: 'Agenda',
         texto: enSantander(r.departamento) ? TEXTOS.agendaSantander : TEXTOS.agendaFuera
       });
       return bloques;
+    }
+
+    /* ============================================================
+       ENVÍO DE MENSAJES
+       registro.enviados = { clave: fecha ISO } de cada mensaje enviado.
+    ============================================================ */
+    const CLAVES_MENSAJE = ['saludo', 'segundo', 'contacto', 'agradecimiento', 'propuesta', 'prueba', 'agenda'];
+    const ESTADOS_ENVIO = {
+      pendiente: 'Por enviar',
+      'en-curso': 'En curso',
+      enviado: 'Enviados'
+    };
+
+    function leerEnviados(valor) {
+      let obj = valor;
+      if (typeof valor === 'string') {
+        try { obj = valor.trim() ? JSON.parse(valor) : {}; } catch (e) { obj = {}; }
+      }
+      const out = {};
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        Object.keys(obj).forEach(k => {
+          if (CLAVES_MENSAJE.indexOf(k) !== -1 && obj[k]) out[k] = String(obj[k]);
+        });
+      }
+      return out;
+    }
+
+    /* Solo cuentan los mensajes que aplican a este registro y tienen texto. */
+    function resumenEnvio(registro) {
+      const r = registro || {};
+      const claves = bloquesMensaje(r).filter(b => b.clave && b.texto).map(b => b.clave);
+      const enviados = claves.filter(k => r.enviados && r.enviados[k]).length;
+      const estado = !enviados ? 'pendiente' : (enviados >= claves.length ? 'enviado' : 'en-curso');
+      return { total: claves.length, enviados: enviados, estado: estado };
+    }
+
+    function textoEstadoEnvio(resumen) {
+      if (resumen.estado === 'enviado') return 'Enviado ✓';
+      if (resumen.estado === 'en-curso') return resumen.enviados + ' de ' + resumen.total;
+      return 'Por enviar';
+    }
+
+    function ultimoEnvio(registro) {
+      const fechas = Object.values((registro && registro.enviados) || {});
+      return fechas.length ? fechas.sort().pop() : '';
+    }
+
+    function registroAbierto() {
+      return datos[categoriaActual].find(c => c.id === idActual) || null;
+    }
+
+    function marcarEnviado(clave, enviado) {
+      const r = registroAbierto();
+      if (!r || CLAVES_MENSAJE.indexOf(clave) === -1) return null;
+      r.enviados = Object.assign({}, r.enviados);
+      if (enviado) r.enviados[clave] = new Date().toISOString();
+      else delete r.enviados[clave];
+      guardarDatos(opGuardar(categoriaActual, r));
+      pintarProgresoDetalle(r);
+      return r.enviados[clave] || '';
+    }
+
+    function pintarBotonEnvio(card, btn, fecha) {
+      const enviado = !!fecha;
+      card.classList.toggle('card-enviada', enviado);
+      btn.classList.toggle('es-enviado', enviado);
+      btn.setAttribute('aria-pressed', enviado ? 'true' : 'false');
+      btn.textContent = enviado ? '✓ Enviado · ' + fechaLegible(fecha) : 'Marcar como enviado';
+      btn.title = enviado ? 'Clic para desmarcar' : '';
+    }
+
+    /* Botón al pie de cada mensaje. Devuelve una función para marcarlo
+       desde otro botón (WhatsApp). */
+    function botonEnvio(card, clave, registro) {
+      const fila = document.createElement('div');
+      fila.className = 'card-envio';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-ghost btn-envio';
+      pintarBotonEnvio(card, btn, registro.enviados && registro.enviados[clave]);
+      btn.addEventListener('click', () => {
+        const r = registroAbierto();
+        const yaEnviado = !!(r && r.enviados && r.enviados[clave]);
+        pintarBotonEnvio(card, btn, marcarEnviado(clave, !yaEnviado));
+      });
+      fila.appendChild(btn);
+      card.appendChild(fila);
+      return () => {
+        const r = registroAbierto();
+        if (r && r.enviados && r.enviados[clave]) return;
+        pintarBotonEnvio(card, btn, marcarEnviado(clave, true));
+      };
+    }
+
+    function pintarProgresoDetalle(registro) {
+      const el = $('detalle-progreso');
+      if (!el) return;
+      const res = resumenEnvio(registro);
+      ponerTexto(el, res.enviados + ' de ' + res.total + ' enviados' +
+        (res.estado === 'enviado' ? ' ✓' : ''));
     }
 
     function armarMensaje(registro) {
@@ -966,59 +1172,22 @@
       return s.slice(0, i + 1).trim();
     }
 
-    function cardConTitulo(titulo) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      const tit = document.createElement('h2');
-      tit.className = 'card-title';
-      tit.textContent = titulo;
-      card.appendChild(tit);
-      return card;
+    /* Texto comparable: sin tildes, minúsculas y espacios simples. */
+    function sinAcentos(texto) {
+      return String(texto || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/\s+/g, ' ').trim();
     }
 
-    function filaSiNo(id, etiqueta, valor, onChange) {
-      const fila = document.createElement('div');
-      fila.className = 'fila';
-      const lab = document.createElement('label');
-      lab.setAttribute('for', id);
-      lab.textContent = etiqueta;
-      const campo = document.createElement('div');
-      campo.className = 'campo';
-      const sel = document.createElement('select');
-      sel.id = id;
-      sel.innerHTML = '<option value="">— Seleccionar —</option><option value="si">Sí</option><option value="no">No</option>';
-      sel.value = valor || '';
-      sel.addEventListener('change', onChange);
-      campo.appendChild(sel);
-      fila.append(lab, campo);
-      return fila;
+    function soloDigitos(texto) {
+      return String(texto || '').replace(/\D/g, '');
     }
 
-    function areaNotas(id, valor, placeholder) {
-      const area = document.createElement('textarea');
-      area.id = id;
-      area.rows = 4;
-      area.style.width = '100%';
-      area.placeholder = placeholder;
-      area.value = valor || '';
-      return area;
-    }
-
-    function botonGuardarNotas(texto, handler) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-ghost';
-      btn.style.marginTop = '10px';
-      btn.textContent = texto;
-      btn.addEventListener('click', handler);
-      return btn;
-    }
-
-    function guardarCampoCliente(campos) {
-      const cliente = datos[categoriaActual].find(c => c.id === idActual);
-      if (!cliente) return;
-      Object.keys(campos).forEach(k => { cliente[k] = campos[k]; });
-      guardarDatos();
+    function fechaLegible(iso) {
+      if (!iso) return '—';
+      const f = new Date(iso);
+      if (isNaN(f.getTime())) return String(iso);
+      return f.toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
     }
 
     function numeroWhatsApp(tel) {
@@ -1038,7 +1207,7 @@
       card.appendChild(btn);
     }
 
-    function botonWhatsApp(card, obtenerTexto, telefono) {
+    function botonWhatsApp(card, obtenerTexto, telefono, alEnviar) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn btn-ghost card-wa';
@@ -1064,12 +1233,13 @@
           return;
         }
         window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(t), '_blank', 'noopener');
+        if (alEnviar) alEnviar();   // abrir WhatsApp marca el mensaje como enviado
       });
       card.appendChild(btn);
     }
 
-    function accionesMensaje(card, obtenerTexto, telefono) {
-      botonWhatsApp(card, obtenerTexto, telefono);
+    function accionesMensaje(card, obtenerTexto, telefono, alEnviar) {
+      botonWhatsApp(card, obtenerTexto, telefono, alEnviar);
       botonCopiarBloque(card, obtenerTexto);
     }
 
@@ -1111,12 +1281,9 @@
         contacto:      LEGADO[registro.contacto] || registro.contacto || '',
         oferta:        registro.oferta === 'no' ? 'no' : (registro.oferta === 'si' ? 'si' : ''),
         propuesta:     String(registro.propuesta || '').trim(),
-        eligioAgenda:  registro.eligioAgenda === 'si' || registro.eligioAgenda === 'no' ? registro.eligioAgenda : '',
-        agendaComo:    String(registro.agendaComo || '').trim(),
-        agendaTiempos: String(registro.agendaTiempos || '').trim(),
-        eligioPrueba:  registro.eligioPrueba === 'si' || registro.eligioPrueba === 'no' ? registro.eligioPrueba : '',
-        pruebaComo:    String(registro.pruebaComo || '').trim(),
-        pruebaTiempos: String(registro.pruebaTiempos || '').trim()
+        enviados:      leerEnviados(registro.enviados),
+        creado:        String(registro.creado || '').trim(),
+        actualizado:   String(registro.actualizado || '').trim()
       };
     }
 
@@ -1132,14 +1299,25 @@
        NUBE (Google Sheets) — opcional
        Si sheets-config.js no tiene la URL /exec, todo sigue
        funcionando en localStorage como antes.
+       Con el script v2 cada cambio se envía como una operación de
+       UN registro (guardar / eliminar) en una cola que se reintenta
+       sola; con el script antiguo se envía la copia completa.
     ============================================================ */
     const URL_HOJA = window.CD_SHEETS && window.CD_SHEETS.url
       ? String(window.CD_SHEETS.url).trim()
       : '';
     let nubeActiva = false;
+    let nubeOps = false;          // el script soporta operaciones por registro (v2)
+    let cargandoNube = false;
+    let pendientes = [];          // operaciones aún no confirmadas por la hoja
+    let enviando = false;
+    let reintento = null;
+    let colaCompleta = Promise.resolve();
 
     function nubeConfigurada() {
-      return URL_HOJA.indexOf('https://') === 0 && URL_HOJA.indexOf('PEGA_AQUI') === -1;
+      /* http://localhost solo para pruebas locales con un servidor simulado. */
+      return (URL_HOJA.indexOf('https://') === 0 || /^http:\/\/localhost[:/]/.test(URL_HOJA)) &&
+        URL_HOJA.indexOf('PEGA_AQUI') === -1;
     }
 
     function copiaPlana(obj) {
@@ -1173,28 +1351,40 @@
       }
     }
 
-    function cargarLocal() {
-      if (!almacenamientoOk) return semilla();
-
-      let bruto = null;
+    function leerLocal(clave) {
+      if (!almacenamientoOk) return null;
       try {
-        bruto = window.localStorage.getItem(ALMACEN);
+        return window.localStorage.getItem(clave);
       } catch (e) {
         almacenamientoOk = false;
-        return semilla();
+        return null;
       }
+    }
 
-      if (!bruto) return semilla();
+    function escribirLocal(clave, valor) {
+      if (!almacenamientoOk) return false;
+      try {
+        window.localStorage.setItem(clave, valor);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    /* conSemilla = false cuando hay hoja configurada: sin copia local no se
+       inventan registros (tendrían ids nuevos y se duplicarían en la hoja). */
+    function cargarLocal(conSemilla) {
+      const respaldo = () => conSemilla ? semilla() : { potenciales: [], clientes: [] };
+      const bruto = leerLocal(ALMACEN);
+      if (!bruto) return respaldo();
 
       try {
-        const obj = JSON.parse(bruto) || {};
-        return {
-          potenciales: Array.isArray(obj.potenciales) ? obj.potenciales.map(normalizar) : [],
-          clientes:    Array.isArray(obj.clientes)    ? obj.clientes.map(normalizar)    : []
-        };
+        return normalizarListas(JSON.parse(bruto) || {});
       } catch (e) {
-        avisoAlmacen = 'Los datos guardados están dañados. Se restauró la lista de potenciales de respaldo. Exporta antes de guardar si necesitas el archivo anterior.';
-        return semilla();
+        avisoAlmacen = conSemilla
+          ? 'Los datos guardados están dañados. Se restauró la lista de potenciales de respaldo. Exporta antes de guardar si necesitas el archivo anterior.'
+          : 'La copia local estaba dañada; se usarán los datos de Google Sheets.';
+        return respaldo();
       }
     }
 
@@ -1205,16 +1395,30 @@
       };
     }
 
-    async function cargarNube() {
+    async function leerHoja() {
       const res = await fetch(URL_HOJA, { method: 'GET', redirect: 'follow' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const obj = await res.json();
+      if (!obj || obj.ok === false) throw new Error((obj && obj.error) || 'Respuesta inválida');
+      return obj;
+    }
+
+    async function cargarNube() {
+      const obj = await leerHoja();
+      nubeOps = Number(obj.version) >= 2;
       const cargado = normalizarListas(obj);
-      if (!cargado.potenciales.length && !cargado.clientes.length) {
+      /* v2: solo se siembra si la hoja nunca se usó (sin encabezados), así
+         borrar todos los registros no vuelve a traer la lista de respaldo. */
+      const sinIniciar = nubeOps
+        ? obj.inicializada === false
+        : (!cargado.potenciales.length && !cargado.clientes.length);
+      if (sinIniciar) {
         const inicial = semilla();
-        await enviarHoja(inicial);
+        await enviarHoja(nubeOps ? { accion: 'reemplazar', datos: inicial } : inicial);
         return inicial;
       }
+      /* Cambios hechos sin conexión: se muestran ya y se envían después. */
+      if (nubeOps) pendientes.forEach(op => aplicarOp(cargado, op));
       return cargado;
     }
 
@@ -1226,29 +1430,123 @@
         body: JSON.stringify(copiaPlana(payload))
       }).then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json().catch(() => ({ ok: true }));
+        return res.json();
       });
     }
 
-    function guardarNube() {
-      if (!nubeActiva) return false;
-      enviarHoja(datos).catch(() => {
-        avisoNube('No se pudo guardar en Google Sheets. Revisa internet o vuelve a publicar el script.');
-      });
-      return true;
+    /* --- Operaciones por registro --- */
+    function opGuardar(categoria, registro) {
+      const ahora = new Date().toISOString();
+      if (!registro.creado) registro.creado = ahora;
+      registro.actualizado = ahora;
+      return { accion: 'guardar', categoria: categoria, registro: copiaPlana(registro) };
     }
 
-    function guardarDatos() {
-      if (nubeActiva) return guardarNube();
+    function opEliminar(id) {
+      return { accion: 'eliminar', id: id };
+    }
+
+    function aplicarOp(base, op) {
+      if (!op) return;
+      const quitar = id => Object.keys(CATEGORIAS).forEach(cat => {
+        base[cat] = base[cat].filter(r => r.id !== id);
+      });
+      if (op.accion === 'eliminar') quitar(op.id);
+      if (op.accion === 'guardar' && op.registro && base[op.categoria]) {
+        quitar(op.registro.id);
+        base[op.categoria].push(normalizar(op.registro));
+      }
+    }
+
+    /* --- Cola de envío (persistida en el navegador) --- */
+    function cargarPendientes() {
+      try {
+        const lista = JSON.parse(leerLocal(ALMACEN_PENDIENTES) || '[]');
+        pendientes = Array.isArray(lista) ? lista : [];
+      } catch (e) {
+        pendientes = [];
+      }
+    }
+
+    function guardarPendientes() {
+      escribirLocal(ALMACEN_PENDIENTES, JSON.stringify(pendientes));
+    }
+
+    async function procesarPendientes() {
+      if (enviando || !nubeActiva || !nubeOps || !pendientes.length) {
+        actualizarEstadoNube();
+        return;
+      }
+      enviando = true;
+      window.clearTimeout(reintento);
+      try {
+        while (pendientes.length) {
+          const respuesta = await enviarHoja(pendientes[0]);
+          if (respuesta && respuesta.ok === false) {
+            if (respuesta.reintentar) throw new Error(respuesta.error);
+            avisoNube('Google Sheets rechazó un cambio: ' + (respuesta.error || 'sin detalle') + '.');
+          }
+          pendientes.shift();
+          guardarPendientes();
+        }
+      } catch (e) {
+        avisoNube('No se pudo guardar en Google Sheets. El cambio quedó en este navegador y se reenviará solo.');
+        reintento = window.setTimeout(procesarPendientes, 20000);
+      } finally {
+        enviando = false;
+        actualizarEstadoNube();
+      }
+    }
+
+    /* Script antiguo: copia completa, en serie para que no se pisen. */
+    function enviarCompleto() {
+      colaCompleta = colaCompleta
+        .then(() => enviarHoja(datos))
+        .catch(() => {
+          avisoNube('No se pudo guardar en Google Sheets. Revisa internet o vuelve a publicar el script.');
+        });
+    }
+
+    function actualizarEstadoNube(textoFijo) {
+      const el = $('estado-nube');
+      if (!el || !nubeConfigurada()) return;
+      let texto = textoFijo || (nubeActiva
+        ? 'Guardando en Google Sheets'
+        : 'Sin conexión a la hoja · guardado local');
+      if (!textoFijo && pendientes.length) {
+        texto += ' · ' + pendientes.length + (pendientes.length === 1 ? ' cambio por enviar' : ' cambios por enviar');
+      }
+      ponerTexto(el, texto);
+      mostrar(el, true);
+    }
+
+    /* Copia local siempre al día (también con hoja: sirve de respaldo). */
+    function guardarCopiaLocal() {
       if (!almacenamientoOk) return false;
       try {
         window.localStorage.setItem(ALMACEN, JSON.stringify(datos));
         return true;
       } catch (e) {
         almacenamientoOk = false;
-        mostrarAvisoAlmacenamiento();
+        if (!nubeConfigurada()) mostrarAvisoAlmacenamiento();
         return false;
       }
+    }
+
+    /* op = operación del registro que cambió (opGuardar / opEliminar). */
+    function guardarDatos(op) {
+      const local = guardarCopiaLocal();
+      if (!nubeConfigurada()) return local;
+      if (nubeActiva && !nubeOps) {
+        enviarCompleto();
+        return true;
+      }
+      if (op) {
+        pendientes.push(copiaPlana(op));
+        guardarPendientes();
+        procesarPendientes();
+      }
+      return nubeActiva || local;
     }
 
     function mostrarAvisoAlmacenamiento() {
@@ -1264,16 +1562,162 @@
     /* ============================================================
        NAVEGACIÓN
     ============================================================ */
-    function irA(idPantalla) {
+    /* opciones.scroll: número = posición a restaurar; false = no mover. */
+    function irA(idPantalla, opciones) {
+      const o = opciones || {};
       document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
 
       const destino = $(idPantalla);
       if (destino) destino.classList.add('activa');
 
       ocultarConfirmacion();
-      limpiarMensaje();
+      if (!o.conservarMensaje) limpiarMensaje();
+      pintarBarraVolver(idPantalla);
+      registrarHistorial(idPantalla);
 
-      try { window.scrollTo(0, 0); } catch (e) { /* algunos visores lo bloquean */ }
+      if (o.scroll === false) return;
+      const y = typeof o.scroll === 'number' ? o.scroll : 0;
+      try {
+        window.scrollTo({ top: y, behavior: 'instant' });
+      } catch (e) {
+        try { window.scrollTo(0, y); } catch (e2) { /* algunos visores lo bloquean */ }
+      }
+    }
+
+    function pantallaActual() {
+      const p = document.querySelector('.pantalla.activa');
+      return p ? p.id : 'pantalla-principal';
+    }
+
+    /* --- Barra de volver: siempre visible bajo el encabezado --- */
+    function pintarBarraVolver(idPantalla) {
+      const barra = $('barra-volver');
+      if (!barra) return;
+      const cat = CATEGORIAS[categoriaActual].plural;
+      let ruta = '';
+      if (idPantalla === 'pantalla-potenciales' || idPantalla === 'pantalla-clientes') ruta = cat;
+      else if (idPantalla === 'pantalla-guardados') ruta = cat + ' / Guardados';
+      else if (idPantalla === 'pantalla-crear') ruta = cat + ' / ' + (modoEdicion ? 'Editar' : 'Crear');
+      else if (idPantalla === 'pantalla-detalle') {
+        const r = registroAbierto();
+        ruta = cat + ' / Guardados / ' + (r ? r.nombre : 'Detalle');
+      }
+      ponerTexto($('ruta'), ruta);
+      mostrar(barra, idPantalla !== 'pantalla-principal');
+    }
+
+    /* Pantalla "padre" de la actual. */
+    function destinoAtras() {
+      const p = pantallaActual();
+      const cat = categoriaActual;
+      if (p === 'pantalla-potenciales' || p === 'pantalla-clientes') return { p: 'pantalla-principal' };
+      if (p === 'pantalla-guardados') return { p: 'pantalla-' + cat, cat: cat };
+      if (p === 'pantalla-crear') {
+        return modoEdicion && idActual
+          ? { p: 'pantalla-detalle', cat: cat, id: idActual }
+          : { p: 'pantalla-' + cat, cat: cat };
+      }
+      if (p === 'pantalla-detalle') return { p: 'pantalla-guardados', cat: cat };
+      return null;
+    }
+
+    /* --- Historial: el botón atrás del navegador/celular navega dentro
+       de la app en vez de salir de la página. --- */
+    let pilaHist = [];
+    let indiceHist = 0;
+    let restaurando = false;
+    let reemplazarHist = false;
+    let historialOk = false;
+
+    function mismoEstado(a, b) {
+      return !!a && !!b && a.p === b.p &&
+        (a.cat || '') === (b.cat || '') && (a.id || '') === (b.id || '');
+    }
+
+    function prepararHistorial() {
+      try {
+        const e = { cd: 1, i: 0, p: 'pantalla-principal' };
+        history.replaceState(e, '');
+        pilaHist = [e];
+        indiceHist = 0;
+        historialOk = true;
+      } catch (err) {
+        historialOk = false;
+        return;
+      }
+      window.addEventListener('popstate', evento => {
+        const e = evento.state;
+        if (!e || !e.cd) return;
+        indiceHist = e.i || 0;
+        restaurando = true;
+        try { mostrarEstado(e, true); } finally { restaurando = false; }
+      });
+    }
+
+    function registrarHistorial(idPantalla) {
+      if (!historialOk || restaurando) return;
+      const e = {
+        cd: 1,
+        p: idPantalla,
+        cat: idPantalla === 'pantalla-principal' ? '' : categoriaActual,
+        id: idPantalla === 'pantalla-detalle' || (idPantalla === 'pantalla-crear' && modoEdicion) ? idActual : '',
+        edit: idPantalla === 'pantalla-crear' && modoEdicion
+      };
+      try {
+        if (reemplazarHist || mismoEstado(pilaHist[indiceHist], e)) {
+          e.i = indiceHist;
+          history.replaceState(e, '');
+          pilaHist[indiceHist] = e;
+        } else {
+          e.i = indiceHist + 1;
+          history.pushState(e, '');
+          indiceHist = e.i;
+          pilaHist.length = indiceHist;
+          pilaHist[indiceHist] = e;
+        }
+      } catch (err) { /* visor restringido: se navega sin historial */ }
+    }
+
+    function existeRegistro(cat, id) {
+      return !!(id && datos[cat] && datos[cat].some(c => c.id === id));
+    }
+
+    function mostrarEstado(e, volviendo) {
+      if (e.cat && CATEGORIAS[e.cat]) categoriaActual = e.cat;
+      modoEdicion = false;
+      switch (e.p) {
+        case 'pantalla-detalle':
+          if (existeRegistro(categoriaActual, e.id)) abrirDetalle(e.id);
+          else abrirGuardados(volviendo);
+          break;
+        case 'pantalla-guardados':
+          abrirGuardados(volviendo);
+          break;
+        case 'pantalla-crear':
+          if (e.edit && existeRegistro(categoriaActual, e.id)) { idActual = e.id; irAEditar(); }
+          else irACrear();
+          break;
+        case 'pantalla-potenciales':
+        case 'pantalla-clientes':
+          abrirCategoria(e.p.replace('pantalla-', ''));
+          break;
+        default:
+          irA('pantalla-principal');
+      }
+    }
+
+    /* Volver: si la pantalla anterior del historial es la "padre", se usa
+       history.back(); si no, se navega a la padre reemplazando la entrada. */
+    function irAtras() {
+      const d = destinoAtras();
+      if (!d) return false;
+      const previo = pilaHist[indiceHist - 1];
+      if (historialOk && indiceHist > 0 && mismoEstado(previo, { p: d.p, cat: d.cat || '', id: d.id || '' })) {
+        try { history.back(); return true; } catch (err) { /* sigue abajo */ }
+      }
+      reemplazarHist = true;
+      try { mostrarEstado(d, true); } finally { reemplazarHist = false; }
+      return true;
     }
 
     function limpiarMensaje() {
@@ -1289,10 +1733,24 @@
       if (!CATEGORIAS[categoria]) return;
       categoriaActual = categoria;
       idActual = null;
+      pintarResumenCategoria();
       irA('pantalla-' + categoria);
     }
 
+    /* "98 guardados · 40 por enviar · 3 en curso" bajo los botones. */
+    function pintarResumenCategoria() {
+      const el = $('resumen-' + categoriaActual);
+      if (!el) return;
+      const lista = datos[categoriaActual];
+      const c = { pendiente: 0, 'en-curso': 0, enviado: 0 };
+      lista.forEach(r => { c[resumenEnvio(r).estado] += 1; });
+      ponerTexto(el, lista.length + (lista.length === 1 ? ' guardado' : ' guardados') +
+        ' · ' + c.pendiente + ' por enviar · ' + c['en-curso'] + ' en curso · ' +
+        c.enviado + (c.enviado === 1 ? ' enviado' : ' enviados'));
+    }
+
     function volverASubmenu() {
+      pintarResumenCategoria();
       irA('pantalla-' + categoriaActual);
     }
 
@@ -1376,34 +1834,88 @@
     ============================================================ */
     function textoBusqueda() {
       const campo = $('buscar-guardados');
-      return campo ? campo.value.trim().toLowerCase() : '';
+      return campo ? sinAcentos(campo.value) : '';
     }
 
+    /* Ignora tildes y mayúsculas; varias palabras deben aparecer todas.
+       El teléfono se compara solo por dígitos (300 123 4567 = 3001234567). */
     function coincideBusqueda(cliente, q) {
       if (!q) return true;
-      const ciudadCompleta = [cliente.ciudad, cliente.departamento].filter(Boolean).join(', ');
-      return [cliente.nombre, cliente.telefono, ciudadCompleta, cliente.fuente, cliente.tipo]
-        .join(' ')
-        .toLowerCase()
-        .indexOf(q) !== -1;
+      const texto = sinAcentos([
+        cliente.nombre, cliente.telefono, cliente.ciudad, cliente.departamento,
+        cliente.fuente, cliente.tipo
+      ].join(' '));
+      const digitos = soloDigitos(cliente.telefono);
+      return q.split(' ').every(palabra => {
+        if (texto.indexOf(palabra) !== -1) return true;
+        const d = soloDigitos(palabra);
+        return d.length >= 3 && d === palabra.replace(/[\s()+-]/g, '') && digitos.indexOf(d) !== -1;
+      });
     }
 
-    function abrirGuardados() {
+    let filtroEnvio = 'todos';     // todos | pendiente | en-curso | enviado
+    let scrollLista = 0;
+
+    /* volviendo = true restaura la posición de la lista al regresar. */
+    function abrirGuardados(volviendo) {
       modoEdicion = false;
       idActual = null;
       pintarGuardados();
-      irA('pantalla-guardados');
+      irA('pantalla-guardados', { scroll: volviendo ? scrollLista : 0 });
+    }
+
+    function ordenarLista(lista) {
+      const orden = $('orden-guardados') ? $('orden-guardados').value : 'nombre';
+      const porNombre = (a, b) =>
+        String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' });
+      if (orden === 'recientes') {
+        return lista.sort((a, b) =>
+          String(b.actualizado || b.creado || '').localeCompare(String(a.actualizado || a.creado || '')) || porNombre(a, b));
+      }
+      if (orden === 'envio') {
+        return lista.sort((a, b) => ultimoEnvio(b).localeCompare(ultimoEnvio(a)) || porNombre(a, b));
+      }
+      return lista.sort(porNombre);
+    }
+
+    function pintarFiltros(conteos) {
+      const cont = $('filtros-envio');
+      if (!cont) return;
+      cont.innerHTML = '';
+      const opciones = [['todos', 'Todos']].concat(Object.keys(ESTADOS_ENVIO).map(k => [k, ESTADOS_ENVIO[k]]));
+      opciones.forEach(([valor, texto]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-ghost' + (filtroEnvio === valor ? ' activo' : '');
+        btn.setAttribute('data-accion', 'filtro');
+        btn.setAttribute('data-arg', valor);
+        btn.setAttribute('aria-pressed', filtroEnvio === valor ? 'true' : 'false');
+        btn.textContent = texto + ' (' + (conteos[valor] || 0) + ')';
+        cont.appendChild(btn);
+      });
     }
 
     function pintarGuardados() {
       const categoria = CATEGORIAS[categoriaActual];
-      const lista = datos[categoriaActual].slice().sort((a, b) =>
-        String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' })
-      );
-      const filtrada = lista.filter(c => coincideBusqueda(c, textoBusqueda()));
+      const q = textoBusqueda();
+      const lista = ordenarLista(datos[categoriaActual].slice());
+      const buscada = lista.filter(c => coincideBusqueda(c, q));
+
+      const conteos = { todos: buscada.length, pendiente: 0, 'en-curso': 0, enviado: 0 };
+      const resumenes = {};
+      buscada.forEach(c => {
+        const res = resumenEnvio(c);
+        resumenes[c.id] = res;
+        conteos[res.estado] += 1;
+      });
+      const filtrada = filtroEnvio === 'todos'
+        ? buscada
+        : buscada.filter(c => resumenes[c.id].estado === filtroEnvio);
       const contenedor = $('contenedor-tabla');
 
-      ponerTexto($('titulo-guardados'), categoria.plural + ' · Guardados');
+      ponerTexto($('titulo-guardados'), categoria.plural + ' · Guardados (' +
+        (filtrada.length !== lista.length ? filtrada.length + ' de ' + lista.length : lista.length) + ')');
+      pintarFiltros(conteos);
 
       contenedor.innerHTML = '';
 
@@ -1418,20 +1930,22 @@
       if (filtrada.length === 0) {
         const vacio = document.createElement('p');
         vacio.className = 'vacio';
-        vacio.textContent = 'Ningún registro coincide con la búsqueda.';
+        vacio.textContent = filtroEnvio !== 'todos' && buscada.length
+          ? 'No hay registros en «' + ESTADOS_ENVIO[filtroEnvio] + '».'
+          : 'Ningún registro coincide con la búsqueda.';
         contenedor.appendChild(vacio);
         return;
       }
 
       const tabla = document.createElement('table');
-      tabla.className = 'tabla';
+      tabla.className = 'tabla' + (categoriaActual === 'potenciales' ? ' con-accion' : '');
       tabla.setAttribute('aria-label', 'Listado de ' + categoria.plural.toLowerCase() + ' guardados');
 
       const thead = document.createElement('thead');
       const filaEncabezado = document.createElement('tr');
       const encabezados = categoriaActual === 'potenciales'
-        ? ['Nombre', 'Teléfono', 'Ciudad', 'Fuente', '']
-        : ['Nombre', 'Teléfono', 'Ciudad', 'Fuente'];
+        ? ['Nombre', 'Teléfono', 'Ciudad', 'Mensajes', '']
+        : ['Nombre', 'Teléfono', 'Ciudad', 'Mensajes'];
       encabezados.forEach(titulo => {
         const th = document.createElement('th');
         th.scope = 'col';
@@ -1447,11 +1961,16 @@
         const fila = document.createElement('tr');
 
         const ciudadCompleta = [cliente.ciudad, cliente.departamento].filter(Boolean).join(', ');
-        const valores = [cliente.nombre, cliente.telefono, ciudadCompleta, cliente.fuente];
+        const res = resumenes[cliente.id];
+        const valores = [cliente.nombre, cliente.telefono, ciudadCompleta, textoEstadoEnvio(res)];
 
         valores.forEach((valor, i) => {
           const td = document.createElement('td');
           td.title = valor;
+          if (i === 3) {
+            td.className = 'estado-envio es-' + res.estado;
+            td.title = res.enviados + ' de ' + res.total + ' mensajes enviados';
+          }
           if (i === 0) {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -1491,7 +2010,8 @@
     /* ============================================================
        DETALLE
     ============================================================ */
-    function abrirDetalle(id) {
+    /* opciones = { scroll: false } para re-pintar sin saltar arriba. */
+    function abrirDetalle(id, opciones) {
       const cliente = datos[categoriaActual].find(c => c.id === id);
 
       if (!cliente) {
@@ -1499,6 +2019,8 @@
         return;
       }
 
+      const opcionesIr = opciones || {};
+      if (pantallaActual() === 'pantalla-guardados') scrollLista = window.scrollY || 0;
       idActual = id;
 
       ponerTexto($('detalle-nombre'), cliente.nombre);
@@ -1524,10 +2046,13 @@
         ['Tipo',          cliente.tipo],
         ['Conocimientos', etiquetaConocimiento(cliente.conocimientos)],
         ['¿Ya son clientes?', etiquetaSiNo(cliente.clientesSi)],
-        ['Contacto',      etiquetaContacto(cliente.contacto)]
+        ['Contacto',      etiquetaContacto(cliente.contacto)],
+        ['Mensajes',      '', 'detalle-progreso'],
+        ['Creado',        fechaLegible(cliente.creado)],
+        ['Actualizado',   fechaLegible(cliente.actualizado)]
       ];
 
-      campos.forEach(([titulo, valor]) => {
+      campos.forEach(([titulo, valor, idValor]) => {
         const fila = document.createElement('div');
         fila.className = 'dato';
 
@@ -1537,6 +2062,7 @@
 
         const vv = document.createElement('span');
         vv.className = 'dato-valor';
+        if (idValor) vv.id = idValor;
         vv.textContent = valor;
 
         fila.append(tt, vv);
@@ -1594,67 +2120,25 @@
           btn.textContent = 'Guardar propuesta';
           btn.addEventListener('click', guardarPropuestaDetalle);
           card.append(area, btnGen, btn);
-          accionesMensaje(card, () => area.value, cliente.telefono);
+          /* La propuesta solo se puede marcar cuando ya está guardada. */
+          const marcar = bloque.texto ? botonEnvio(card, bloque.clave, cliente) : null;
+          accionesMensaje(card, () => area.value, cliente.telefono, marcar);
         } else {
           const p = document.createElement('p');
           p.className = 'card-mensaje-texto';
           p.textContent = bloque.texto;
           card.appendChild(p);
-          accionesMensaje(card, () => p.textContent, cliente.telefono);
+          const marcar = botonEnvio(card, bloque.clave, cliente);
+          accionesMensaje(card, () => p.textContent, cliente.telefono, marcar);
         }
         cont.appendChild(card);
       });
-
-      if (cliente.clientesSi === 'si') {
-        const cardAgenda = cardConTitulo('¿Eligió la agenda?');
-        cardAgenda.appendChild(filaSiNo('detalle-eligio-agenda', '¿Eligió la agenda?', cliente.eligioAgenda, () => {
-          guardarCampoCliente({ eligioAgenda: $('detalle-eligio-agenda').value });
-        }));
-        cont.appendChild(cardAgenda);
-
-        const cardAgendaComo = cardConTitulo('Manejo de la agenda');
-        const agendaComo = areaNotas('detalle-agenda-como', cliente.agendaComo, 'Cómo se manejará la agenda.');
-        cardAgendaComo.append(agendaComo, botonGuardarNotas('Guardar', () => {
-          guardarCampoCliente({ agendaComo: agendaComo.value.trim() });
-        }));
-        accionesMensaje(cardAgendaComo, () => agendaComo.value, cliente.telefono);
-        cont.appendChild(cardAgendaComo);
-
-        const cardAgendaTiempos = cardConTitulo('Tiempos de la agenda');
-        const agendaTiempos = areaNotas('detalle-agenda-tiempos', cliente.agendaTiempos, 'Tiempos de la agenda.');
-        cardAgendaTiempos.append(agendaTiempos, botonGuardarNotas('Guardar', () => {
-          guardarCampoCliente({ agendaTiempos: agendaTiempos.value.trim() });
-        }));
-        accionesMensaje(cardAgendaTiempos, () => agendaTiempos.value, cliente.telefono);
-        cont.appendChild(cardAgendaTiempos);
-
-        const cardPrueba = cardConTitulo('¿Eligió la prueba gratis?');
-        cardPrueba.appendChild(filaSiNo('detalle-eligio-prueba', '¿Eligió la prueba gratis?', cliente.eligioPrueba, () => {
-          guardarCampoCliente({ eligioPrueba: $('detalle-eligio-prueba').value });
-        }));
-        cont.appendChild(cardPrueba);
-
-        const cardPruebaComo = cardConTitulo('Manejo de la prueba');
-        const pruebaComo = areaNotas('detalle-prueba-como', cliente.pruebaComo, 'Cómo se manejará la prueba.');
-        cardPruebaComo.append(pruebaComo, botonGuardarNotas('Guardar', () => {
-          guardarCampoCliente({ pruebaComo: pruebaComo.value.trim() });
-        }));
-        accionesMensaje(cardPruebaComo, () => pruebaComo.value, cliente.telefono);
-        cont.appendChild(cardPruebaComo);
-
-        const cardPruebaTiempos = cardConTitulo('Tiempos de la prueba');
-        const pruebaTiempos = areaNotas('detalle-prueba-tiempos', cliente.pruebaTiempos, 'Tiempos de la prueba.');
-        cardPruebaTiempos.append(pruebaTiempos, botonGuardarNotas('Guardar', () => {
-          guardarCampoCliente({ pruebaTiempos: pruebaTiempos.value.trim() });
-        }));
-        accionesMensaje(cardPruebaTiempos, () => pruebaTiempos.value, cliente.telefono);
-        cont.appendChild(cardPruebaTiempos);
-      }
+      pintarProgresoDetalle(cliente);
 
       const btnPasar = $('btn-pasar-cliente');
       mostrar(btnPasar, categoriaActual === 'potenciales');
 
-      irA('pantalla-detalle');
+      irA('pantalla-detalle', opcionesIr);
     }
 
     /* ============================================================
@@ -1707,8 +2191,8 @@
         return;
       }
 
-      lista.splice(indice, 1);
-      guardarDatos();
+      const eliminado = lista.splice(indice, 1)[0];
+      guardarDatos(opEliminar(eliminado.id));
 
       abrirGuardados();
     }
@@ -1726,13 +2210,22 @@
       return digitos.length >= 7 && digitos.length <= 15;
     }
 
+    /* Mismo nombre (sin tildes ni mayúsculas) y mismo teléfono (solo dígitos,
+       sin el 57 inicial) = mismo negocio. */
     function claveDuplicado(registro) {
-      return (registro.nombre || '').toLowerCase() + '|' + String(registro.telefono || '').replace(/\D/g, '');
+      let tel = soloDigitos(registro.telefono);
+      if (tel.length === 12 && tel.indexOf('57') === 0) tel = tel.slice(2);
+      return sinAcentos(registro.nombre) + '|' + tel;
     }
 
-    function hayDuplicado(registro, exceptId) {
+    /* Busca en Potenciales y en Clientes; devuelve el registro repetido. */
+    function buscarDuplicado(registro, exceptId) {
       const clave = claveDuplicado(registro);
-      return datos[categoriaActual].some(c => c.id !== exceptId && claveDuplicado(c) === clave);
+      for (const cat of Object.keys(CATEGORIAS)) {
+        const igual = datos[cat].find(c => c.id !== exceptId && claveDuplicado(c) === clave);
+        if (igual) return { categoria: cat, registro: igual };
+      }
+      return null;
     }
 
     function marcarErrorCampo(id, texto) {
@@ -1794,12 +2287,15 @@
       }
 
       const exceptId = modoEdicion ? idActual : null;
-      if (hayDuplicado(registro, exceptId)) {
+      const repetido = buscarDuplicado(registro, exceptId);
+      if (repetido) {
         if (msg) {
           msg.classList.remove('ok');
           msg.classList.add('error');
-          msg.textContent = 'Ya existe un registro con el mismo nombre y teléfono en esta categoría.';
+          msg.textContent = 'Ya existe «' + repetido.registro.nombre + '» con ese teléfono en ' +
+            CATEGORIAS[repetido.categoria].plural + '.';
         }
+        marcarErrorCampo('telefono', 'Teléfono ya registrado con este nombre');
         return false;
       }
 
@@ -1808,28 +2304,26 @@
         if (previo) {
           registro.propuesta = previo.propuesta || '';
           registro.oferta = previo.oferta || '';
-          registro.eligioAgenda = previo.eligioAgenda || '';
-          registro.agendaComo = previo.agendaComo || '';
-          registro.agendaTiempos = previo.agendaTiempos || '';
-          registro.eligioPrueba = previo.eligioPrueba || '';
-          registro.pruebaComo = previo.pruebaComo || '';
-          registro.pruebaTiempos = previo.pruebaTiempos || '';
         }
       }
 
+      let guardado;
       if (modoEdicion && idActual) {
         const indice = datos[categoriaActual].findIndex(c => c.id === idActual);
         if (indice === -1) {
           modoEdicion = false;
-          datos[categoriaActual].push(normalizar(registro));
+          guardado = normalizar(registro);
+          datos[categoriaActual].push(guardado);
         } else {
-          datos[categoriaActual][indice] = normalizar(Object.assign({}, datos[categoriaActual][indice], registro));
+          guardado = normalizar(Object.assign({}, datos[categoriaActual][indice], registro));
+          datos[categoriaActual][indice] = guardado;
         }
       } else {
-        datos[categoriaActual].push(normalizar(registro));
+        guardado = normalizar(registro);
+        datos[categoriaActual].push(guardado);
       }
 
-      const persistido = guardarDatos();
+      const persistido = guardarDatos(opGuardar(categoriaActual, guardado));
       const verbo = modoEdicion ? 'Actualizado' : 'Guardado';
 
       if (msg) {
@@ -1841,8 +2335,8 @@
       }
 
       if (modoEdicion) {
-        abrirDetalle(idActual);
-        modoEdicion = false;
+        /* Vuelve al detalle del registro (usa el historial si corresponde). */
+        irAtras();
         return false;
       }
 
@@ -1888,8 +2382,8 @@
       const sel = $('detalle-oferta');
       if (!cliente || !sel) return;
       cliente.oferta = sel.value;
-      guardarDatos();
-      abrirDetalle(cliente.id);
+      guardarDatos(opGuardar(categoriaActual, cliente));
+      abrirDetalle(cliente.id, { scroll: false });
     }
 
     function guardarPropuestaDetalle() {
@@ -1897,8 +2391,8 @@
       const area = $('detalle-propuesta');
       if (!cliente || !area) return;
       cliente.propuesta = area.value.trim();
-      guardarDatos();
-      abrirDetalle(cliente.id);
+      guardarDatos(opGuardar(categoriaActual, cliente));
+      abrirDetalle(cliente.id, { scroll: false });
       const msg = $('mensaje-detalle');
       if (msg) {
         msg.classList.remove('error');
@@ -1912,9 +2406,15 @@
       const lista = datos.potenciales;
       const indice = lista.findIndex(c => c.id === idActual);
       if (indice === -1) return;
+      const clave = claveDuplicado(lista[indice]);
+      if (datos.clientes.some(c => claveDuplicado(c) === clave)) {
+        avisoNube('Ya existe un cliente con el mismo nombre y teléfono.');
+        return;
+      }
       const registro = lista.splice(indice, 1)[0];
       datos.clientes.push(registro);
-      guardarDatos();
+      /* Guardar con otra categoría = mover la fila en la hoja (mismo id). */
+      guardarDatos(opGuardar('clientes', registro));
       categoriaActual = 'clientes';
       abrirDetalle(registro.id);
       const msg = $('mensaje-detalle');
@@ -1923,6 +2423,35 @@
         msg.classList.add('ok');
         msg.textContent = 'Pasó a clientes reales.';
       }
+    }
+
+    /* CSV de la categoría abierta (se abre directo en Excel, con tildes). */
+    function exportarCsv() {
+      const columnas = [
+        ['nombre', 'Nombre'], ['telefono', 'Teléfono'], ['ciudad', 'Ciudad'],
+        ['departamento', 'Departamento'], ['fuente', 'Fuente'], ['tipo', 'Tipo'],
+        ['conocimientos', 'Conocimientos'], ['clientesSi', '¿Ya son clientes?'],
+        ['contacto', 'Contacto'], ['oferta', '¿Quiere la oferta?'],
+        ['propuesta', 'Propuesta'], ['creado', 'Creado'], ['actualizado', 'Actualizado']
+      ];
+      const celda = v => {
+        let s = String(v == null ? '' : v);
+        if (/^[=+\-@]/.test(s)) s = "'" + s;   // evita fórmulas al abrir en Excel
+        return '"' + s.replace(/"/g, '""') + '"';
+      };
+      const filas = [columnas.map(c => celda(c[1])).concat(celda('Mensajes enviados')).join(';')];
+      datos[categoriaActual].forEach(r => {
+        const res = resumenEnvio(r);
+        filas.push(columnas.map(c => celda(r[c[0]]))
+          .concat(celda(res.enviados + ' de ' + res.total)).join(';'));
+      });
+      const blob = new Blob(['﻿' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'objetivos-' + categoriaActual + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     function exportarJson() {
@@ -1945,10 +2474,16 @@
         case 'guardados':          abrirGuardados(); break;
         case 'submenu':            volverASubmenu(); break;
         case 'principal':          irA('pantalla-principal'); break;
+        case 'atras':              irAtras(); break;
+        case 'filtro':
+          filtroEnvio = ESTADOS_ENVIO[arg] ? arg : 'todos';
+          pintarGuardados();
+          break;
         case 'guardar':            guardar(); break;
         case 'editar':             irAEditar(); break;
         case 'pasar-cliente':      pasarACliente(); break;
         case 'exportar':           exportarJson(); break;
+        case 'exportar-csv':       exportarCsv(); break;
         case 'eliminar':           pedirEliminar(); break;
         case 'confirmar-eliminar': confirmarEliminar(); break;
         case 'cancelar-eliminar':  cancelarEliminar(); break;
@@ -1972,29 +2507,43 @@
         if (confirmacion && !confirmacion.hasAttribute('hidden')) {
           evento.preventDefault();
           cancelarEliminar();
+          return;
         }
+        /* Escape = volver, salvo mientras se escribe en un campo. */
+        const t = evento.target;
+        if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+        if (irAtras()) evento.preventDefault();
       });
     }
 
-    function arrancarLocal() {
-      almacenamientoOk = probarAlmacenamiento();
-      vaciarAlmacen();
-      datos = cargarLocal();
-      if (!almacenamientoOk || avisoAlmacen) mostrarAvisoAlmacenamiento();
+    function arrancarLocal(conSemilla) {
+      datos = cargarLocal(conSemilla);
+    }
+
+    /* Si llegan datos nuevos mientras se ve la lista, se repinta. */
+    function refrescarVista() {
+      const p = pantallaActual();
+      if (p === 'pantalla-guardados') pintarGuardados();
+      if (p === 'pantalla-potenciales' || p === 'pantalla-clientes') pintarResumenCategoria();
     }
 
     async function iniciarNube() {
-      ponerTexto($('estado-nube'), 'Conectando con Google Sheets…');
-      mostrar($('estado-nube'), true);
+      if (cargandoNube) return;
+      cargandoNube = true;
+      actualizarEstadoNube('Conectando con Google Sheets…');
       try {
         datos = await cargarNube();
         nubeActiva = true;
-        ponerTexto($('estado-nube'), 'Guardando en Google Sheets');
+        guardarCopiaLocal();
+        refrescarVista();
+        procesarPendientes();
       } catch (e) {
         nubeActiva = false;
-        arrancarLocal();
-        avisoNube('No se pudo leer la hoja. Revisa que el script esté publicado como aplicación web. Mientras tanto se usa este navegador.');
-        ponerTexto($('estado-nube'), 'Sin conexión a la hoja · guardado local');
+        if (!almacenamientoOk || avisoAlmacen) mostrarAvisoAlmacenamiento();
+        avisoNube('No se pudo leer la hoja. Revisa que el script esté publicado como aplicación web. Mientras tanto se usa la última copia de este navegador y los cambios se enviarán al reconectar.');
+      } finally {
+        cargandoNube = false;
+        actualizarEstadoNube();
       }
     }
 
@@ -2017,9 +2566,36 @@
 
       const buscar = $('buscar-guardados');
       if (buscar) buscar.addEventListener('input', pintarGuardados);
+      const orden = $('orden-guardados');
+      if (orden) orden.addEventListener('change', pintarGuardados);
 
-      if (nubeConfigurada()) iniciarNube();
-      else arrancarLocal();
+      prepararHistorial();
+
+      almacenamientoOk = probarAlmacenamiento();
+      vaciarAlmacen();
+
+      if (nubeConfigurada()) {
+        /* Muestra al instante la última copia local; la hoja la reemplaza al llegar. */
+        cargarPendientes();
+        arrancarLocal(false);
+        iniciarNube();
+        window.addEventListener('online', () => {
+          if (nubeActiva) procesarPendientes();
+          else iniciarNube();
+        });
+        /* Al volver a la pestaña se traen los cambios de otras personas
+           (como máximo una vez cada 30 s). */
+        let ultimaLectura = Date.now();
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') return;
+          if (Date.now() - ultimaLectura < 30000) return;
+          ultimaLectura = Date.now();
+          iniciarNube();
+        });
+      } else {
+        arrancarLocal(true);
+        if (!almacenamientoOk || avisoAlmacen) mostrarAvisoAlmacenamiento();
+      }
     }
 
     iniciar();
