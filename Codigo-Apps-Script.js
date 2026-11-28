@@ -7,16 +7,27 @@
  *      Versión: "Nueva versión" → Implementar.
  *      Así la URL /exec de sheets-config.js NO cambia.
  *
- * Qué responde:
- *   GET  → { ok, version, inicializada, potenciales: [...], clientes: [...] }
- *   POST → { accion: 'guardar', categoria, registro }  crea o actualiza UNA fila (por id)
- *          { accion: 'eliminar', id }                  borra UNA fila (copia en "Eliminados")
+ * CLAVE DE ACCESO (una sola vez, después de implementar):
+ *   En el editor elige la función "generarClave" → Ejecutar → acepta los
+ *   permisos → copia la clave que aparece en el "Registro de ejecución".
+ *   Esa clave se escribe una vez en Base.html en cada dispositivo.
+ *   Volver a ejecutar generarClave crea una clave nueva y anula la anterior
+ *   (úsalo si la clave se filtra o al cambiar de equipo).
+ *   La clave se guarda en Propiedades del script, NUNCA en el repositorio.
  *
- * Ya NO existe ninguna acción que reescriba toda la hoja: un envío vacío,
- * incompleto o de una versión vieja de la página se rechaza sin tocar datos.
+ * Qué responde:
+ *   GET  → { ok, version, claveConfigurada }   (sin datos)
+ *   POST → { accion: 'leer', clave }                         todos los registros
+ *          { accion: 'guardar', clave, categoria, registro, base }
+ *                crea o actualiza UNA fila (por id). base = "actualizado" que
+ *                tenía la página; si la fila cambió después → conflicto.
+ *          { accion: 'eliminar', clave, id }   borra UNA fila (copia en "Eliminados")
+ *
+ * No existe ninguna acción que reescriba toda la hoja: un envío vacío,
+ * incompleto, sin clave o de una versión vieja de la página se rechaza.
  */
 
-var VERSION = 3;
+var VERSION = 4;
 var NOMBRE_HOJA = 'Datos';
 var CATEGORIAS = ['potenciales', 'clientes'];
 var ESTADOS = ['pendiente', 'enviado'];
@@ -31,6 +42,37 @@ var ENCABEZADOS = [
    página: si existen en la hoja se conservan tal cual, no se borran. */
 var NOMBRE_PAPELERA = 'Eliminados';
 var MAX_TEXTO = 5000;
+
+/* ============================================================
+   CLAVE DE ACCESO
+============================================================ */
+function claveGuardada() {
+  return PropertiesService.getScriptProperties().getProperty('CLAVE') || '';
+}
+
+/* Ejecutar a mano desde el editor de Apps Script. */
+function generarClave() {
+  var letras = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    Utilities.getUuid() + Utilities.getUuid() + Date.now());
+  var clave = '';
+  for (var i = 0; i < 20; i++) clave += letras.charAt((bytes[i] + 256) % letras.length);
+  PropertiesService.getScriptProperties().setProperty('CLAVE', clave);
+  Logger.log('Clave de acceso para Base.html: ' + clave);
+  return clave;
+}
+
+/* Sin clave configurada la base queda abierta (para no bloquearte antes de
+   ejecutar generarClave); la página lo avisa. */
+function verificarClave(p) {
+  var clave = claveGuardada();
+  if (!clave) return;
+  if (String((p && p.clave) || '') !== clave) {
+    var e = new Error('Clave incorrecta');
+    e.clave = true;
+    throw e;
+  }
+}
 
 /* ============================================================
    HOJA Y CABECERA
@@ -85,7 +127,8 @@ function celda(v) {
 ============================================================ */
 function leerDatos() {
   var sh = hoja();
-  var out = { ok: true, version: VERSION, inicializada: false, potenciales: [], clientes: [] };
+  var out = { ok: true, version: VERSION, claveConfigurada: !!claveGuardada(),
+              inicializada: false, potenciales: [], clientes: [] };
   var valores = sh.getDataRange().getDisplayValues();
   if (!valores.length) return out;
 
@@ -160,25 +203,35 @@ function armarFila(cab, categoria, rec, previa) {
   });
 }
 
-function guardarRegistro(categoria, rec) {
+/* base = valor de "actualizado" que la página tenía de esta fila.
+   undefined = la página no controla conflictos (se guarda igual). */
+function guardarRegistro(categoria, rec, base) {
   validarCategoria(categoria);
   validarRegistro(rec);
   rec.id = validarId(rec.id);
 
   var sh = hoja();
   var cab = cabeceraCompleta(sh);
-  rec.actualizado = new Date().toISOString();
+  var ahora = new Date().toISOString();
 
   var f = buscarFila(sh, cab, rec.id);
   var previa = null;
   if (f === -1) {
     f = sh.getLastRow() + 1;
     asegurarFilas(sh, f);
-    if (!rec.creado) rec.creado = rec.actualizado;
+    if (!rec.creado) rec.creado = ahora;
   } else {
     var r = sh.getRange(f, 1, 1, cab.length);
     previa = { valores: r.getValues()[0], formulas: r.getFormulas()[0] };
+    if (base !== undefined && base !== null) {
+      var actual = String(r.getDisplayValues()[0][cab.indexOf('actualizado')] || '').trim();
+      if (actual !== String(base).trim()) {
+        return { ok: false, conflicto: true, id: rec.id, actualizado: actual,
+                 error: 'Otra persona cambió este registro' };
+      }
+    }
   }
+  rec.actualizado = ahora;
   sh.getRange(f, 1, 1, cab.length).setValues([armarFila(cab, categoria, rec, previa)]);
   return { ok: true, id: rec.id, actualizado: rec.actualizado };
 }
@@ -231,14 +284,18 @@ function conBloqueo(fn) {
   try {
     return json(fn());
   } catch (err) {
-    return json({ ok: false, error: String((err && err.message) || err) });
+    var r = { ok: false, error: String((err && err.message) || err) };
+    if (err && err.clave) r.clave = true;
+    return json(r);
   } finally {
     lock.releaseLock();
   }
 }
 
+/* El GET no devuelve datos: solo la versión, para que la página sepa
+   cómo hablar con el script. Los datos se leen por POST con la clave. */
 function doGet() {
-  return conBloqueo(leerDatos);
+  return json({ ok: true, version: VERSION, claveConfigurada: !!claveGuardada() });
 }
 
 function doPost(e) {
@@ -246,8 +303,10 @@ function doPost(e) {
     var cuerpo = e && e.postData && e.postData.contents ? e.postData.contents : '';
     if (!cuerpo) throw new Error('Petición vacía');
     var p = JSON.parse(cuerpo) || {};
+    verificarClave(p);
     switch (p.accion) {
-      case 'guardar':  return guardarRegistro(p.categoria, p.registro);
+      case 'leer':     return leerDatos();
+      case 'guardar':  return guardarRegistro(p.categoria, p.registro, p.base);
       case 'eliminar': return eliminarRegistro(p.id);
       default:         throw new Error('Acción no reconocida');
     }

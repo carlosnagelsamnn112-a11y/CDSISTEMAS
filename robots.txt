@@ -1,5 +1,2 @@
 User-agent: *
 Allow: /
-Disallow: /Base.html
-Disallow: /sheets-config.js
-Disallow: /Codigo-Apps-Script.js

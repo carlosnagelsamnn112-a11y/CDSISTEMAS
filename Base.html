@@ -665,6 +665,26 @@
     </p>
   </noscript>
 
+  <!-- PANTALLA 0: clave de acceso (solo si el script la exige) -->
+  <div id="pantalla-clave" class="pantalla">
+    <h1>Acceso</h1>
+    <p class="lead-app" id="texto-clave">Escribe la clave de acceso de la base de datos.</p>
+    <form id="form-clave" class="formulario" autocomplete="off">
+      <div class="card">
+        <div class="fila">
+          <label for="clave">Clave</label>
+          <div class="campo">
+            <input id="clave" name="clave" type="password" autocomplete="current-password" spellcheck="false" required>
+          </div>
+        </div>
+      </div>
+      <div class="acciones">
+        <button type="button" class="btn btn-primary" data-accion="entrar" id="btn-entrar">Entrar</button>
+      </div>
+      <p id="mensaje-clave" class="mensaje" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+
   <!-- PANTALLA 1: menú principal -->
   <div id="pantalla-principal" class="pantalla activa">
     <h1>Estrategia Comercial</h1>
@@ -674,6 +694,7 @@
     </div>
     <p id="aviso-almacenamiento" class="aviso" role="status" hidden></p>
     <p id="estado-nube" class="estado-nube" hidden></p>
+    <p class="estado-nube"><button type="button" class="btn btn-ghost" id="btn-cerrar-sesion" data-accion="cerrar-sesion" hidden>Cerrar sesión en este equipo</button></p>
   </div>
 
   <!-- PANTALLA 2: submenú Potenciales -->
@@ -722,7 +743,7 @@
         <div class="fila">
           <label for="ciudad">Ciudad</label>
           <div class="campo">
-            <input id="ciudad" name="ciudad" type="text" autocomplete="off" spellcheck="false" required aria-describedby="error-ciudad">
+            <input id="ciudad" name="ciudad" type="text" list="lista-ciudades" autocomplete="off" spellcheck="false" required aria-describedby="error-ciudad">
             <p id="error-ciudad" class="error-campo"></p>
           </div>
         </div>
@@ -775,7 +796,7 @@
         <div class="fila">
           <label for="fuente">Fuente</label>
           <div class="campo">
-            <input id="fuente" name="fuente" type="text" autocomplete="off" spellcheck="false" required aria-describedby="error-fuente">
+            <input id="fuente" name="fuente" type="text" list="lista-fuentes" autocomplete="off" spellcheck="false" required aria-describedby="error-fuente">
             <p id="error-fuente" class="error-campo"></p>
           </div>
         </div>
@@ -820,6 +841,9 @@
           </div>
         </div>
       </div>
+
+      <datalist id="lista-ciudades"></datalist>
+      <datalist id="lista-fuentes"></datalist>
 
       <div class="acciones">
         <button type="button" class="btn btn-primary" data-accion="guardar" id="btn-guardar">Guardar</button>
@@ -876,6 +900,7 @@
     const ALMACEN = 'cdsistemas.objetivos.v2';
     const ALMACEN_ANTERIOR = 'cdsistemas.objetivos.v1';
     const ALMACEN_PENDIENTES = 'cdsistemas.objetivos.pendientes';
+    const ALMACEN_CLAVE = 'cdsistemas.clave';
 
     const TEXTOS = {
       saludo: 'Buen día, le escribimos del equipo de ventas de CDSISTEMAS, un emprendimiento de soluciones y herramientas digitales para empresas, ubicado en Bucaramanga.',
@@ -1178,7 +1203,8 @@
       : '';
     let nubeActiva = false;
     let nubeOps = false;          // el script soporta operaciones por registro (v2+)
-    let nubeVersion = 0;          // versión del script publicada (3 = guarda estado y creado)
+    let nubeVersion = 0;          // versión del script publicada (3 = estado y creado; 4 = clave)
+    let claveConfigurada = true;  // v4: el script ya tiene clave (generarClave)
     let cargandoNube = false;
     let pendientes = [];          // operaciones aún no confirmadas por la hoja
     let enviando = false;
@@ -1266,11 +1292,34 @@
       };
     }
 
+    /* --- Clave de acceso (script v4+) ---
+       Se guarda solo en este navegador. La escribe la persona; nunca va en
+       el código ni en la URL. */
+    let claveMemoria = '';
+    function leerClave() { return leerLocal(ALMACEN_CLAVE) || claveMemoria; }
+
+    function errorClave(obj) {
+      const e = new Error((obj && obj.error) || 'Clave incorrecta');
+      e.clave = true;
+      return e;
+    }
+
+    /* 1) GET: solo dice la versión del script (v4+ no entrega datos por GET).
+       2) v4+: POST "leer" con la clave. Nunca se manda un POST a un script
+          antiguo para leer: el v1 lo tomaría como "reescribir la hoja". */
     async function leerHoja() {
       const res = await fetch(URL_HOJA, { method: 'GET', redirect: 'follow' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const obj = await res.json();
-      if (!obj || obj.ok === false) throw new Error((obj && obj.error) || 'Respuesta inválida');
+      const info = await res.json();
+      if (!info || info.ok === false) throw new Error((info && info.error) || 'Respuesta inválida');
+      const version = Number(info.version) || 1;
+      if (version < 4) return info;
+      nubeVersion = version;
+      const obj = await enviarHoja({ accion: 'leer' });
+      if (!obj || obj.ok === false) {
+        if (obj && obj.clave) throw errorClave(obj);
+        throw new Error((obj && obj.error) || 'Respuesta inválida');
+      }
       return obj;
     }
 
@@ -1280,6 +1329,7 @@
       const obj = await leerHoja();
       nubeOps = Number(obj.version) >= 2;
       nubeVersion = Number(obj.version) || 1;
+      claveConfigurada = obj.claveConfigurada !== false;
       const cargado = normalizarListas(obj);
       /* Cambios hechos sin conexión: se muestran ya y se envían después. */
       pendientes.forEach(op => aplicarOp(cargado, op));
@@ -1287,23 +1337,30 @@
     }
 
     function enviarHoja(payload) {
+      const cuerpo = copiaPlana(payload);
+      if (nubeVersion >= 4) cuerpo.clave = leerClave();
       return fetch(URL_HOJA, {
         method: 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(copiaPlana(payload))
+        body: JSON.stringify(cuerpo)
       }).then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
       });
     }
 
-    /* --- Operaciones por registro --- */
-    /* "creado" se pone solo al crear (en guardar()); un registro antiguo sin
-       fecha no recibe una fecha falsa cuando se edita o se marca enviado. */
+    /* --- Operaciones por registro ---
+       base = "actualizado" que tenía el registro al cambiarlo; el script v4
+       rechaza el cambio si otra persona lo modificó después (conflicto).
+       "creado" se pone solo al crear (en guardar()). */
     function opGuardar(categoria, registro) {
-      registro.actualizado = new Date().toISOString();
-      return { accion: 'guardar', categoria: categoria, registro: copiaPlana(registro) };
+      return {
+        accion: 'guardar',
+        categoria: categoria,
+        base: registro.actualizado || '',
+        registro: copiaPlana(registro)
+      };
     }
 
     function opEliminar(id) {
@@ -1320,6 +1377,14 @@
         quitar(op.registro.id);
         base[op.categoria].push(normalizar(op.registro));
       }
+    }
+
+    function buscarEnDatos(id) {
+      for (const cat of Object.keys(CATEGORIAS)) {
+        const r = datos[cat].find(x => x.id === id);
+        if (r) return r;
+      }
+      return null;
     }
 
     /* --- Cola de envío (persistida en el navegador) --- */
@@ -1343,23 +1408,50 @@
       }
       enviando = true;
       window.clearTimeout(reintento);
+      let recargar = false;
       try {
         while (pendientes.length) {
-          const respuesta = await enviarHoja(pendientes[0]);
+          const op = pendientes[0];
+          const respuesta = await enviarHoja(op);
           if (respuesta && respuesta.ok === false) {
+            if (respuesta.clave) throw errorClave(respuesta);
             if (respuesta.reintentar) throw new Error(respuesta.error);
-            avisoNube('Google Sheets rechazó un cambio: ' + (respuesta.error || 'sin detalle') + '.');
+            if (respuesta.conflicto) {
+              const r = buscarEnDatos(respuesta.id);
+              avisoNube('Otra persona cambió «' + (r ? r.nombre : 'un registro') +
+                '» antes que tú. Se cargó su versión; vuelve a aplicar tu cambio.');
+              recargar = true;
+            } else {
+              avisoNube('Google Sheets rechazó un cambio: ' + (respuesta.error || 'sin detalle') + '.');
+            }
+          } else if (respuesta && respuesta.actualizado && op.accion === 'guardar') {
+            /* Nueva marca de la hoja: la usan los siguientes cambios del mismo registro. */
+            const id = op.registro.id;
+            const r = buscarEnDatos(id);
+            if (r) r.actualizado = respuesta.actualizado;
+            pendientes.slice(1).forEach(o => {
+              if (o.accion === 'guardar' && o.registro && o.registro.id === id) {
+                o.base = respuesta.actualizado;
+                o.registro.actualizado = respuesta.actualizado;
+              }
+            });
+            guardarCopiaLocal();
           }
           pendientes.shift();
           guardarPendientes();
         }
       } catch (e) {
-        avisoNube('No se pudo guardar en Google Sheets. El cambio quedó en este navegador y se reenviará solo.');
-        reintento = window.setTimeout(procesarPendientes, 20000);
+        if (e && e.clave) {
+          pedirClave('La clave guardada ya no es válida. Escríbela de nuevo; tus cambios siguen guardados en este navegador.');
+        } else {
+          avisoNube('No se pudo guardar en Google Sheets. El cambio quedó en este navegador y se reenviará solo.');
+          reintento = window.setTimeout(procesarPendientes, 20000);
+        }
       } finally {
         enviando = false;
         actualizarEstadoNube();
       }
+      if (recargar) iniciarNube();
     }
 
     /* Script antiguo (v1): solo entiende la copia completa y reescribe toda
@@ -1383,15 +1475,18 @@
       const el = $('estado-nube');
       if (!el || !nubeConfigurada()) return;
       let texto = textoFijo || (nubeActiva
-        ? (nubeVersion >= 3
-            ? 'Guardando en Google Sheets'
-            : 'Conectado a Google Sheets · el script publicado es antiguo: el estado y la fecha de creación no se guardan en la hoja. Publica Codigo-Apps-Script.js (versión 3).')
+        ? (nubeVersion < 3
+            ? 'Conectado a Google Sheets · el script publicado es antiguo: el estado y la fecha de creación no se guardan en la hoja. Publica Codigo-Apps-Script.js.'
+            : (nubeVersion >= 4 && !claveConfigurada
+                ? 'Guardando en Google Sheets · la base aún no tiene clave: ejecuta generarClave en Apps Script.'
+                : 'Guardando en Google Sheets'))
         : 'Sin conexión a la hoja · guardado local');
       if (!textoFijo && pendientes.length) {
         texto += ' · ' + pendientes.length + (pendientes.length === 1 ? ' cambio por enviar' : ' cambios por enviar');
       }
       ponerTexto(el, texto);
       mostrar(el, true);
+      mostrar($('btn-cerrar-sesion'), nubeVersion >= 4 && !!leerClave());
     }
 
     /* Copia local siempre al día (también con hoja: sirve de respaldo). */
@@ -1477,7 +1572,7 @@
         ruta = cat + ' / Guardados / ' + (r ? r.nombre : 'Detalle');
       }
       ponerTexto($('ruta'), ruta);
-      mostrar(barra, idPantalla !== 'pantalla-principal');
+      mostrar(barra, idPantalla !== 'pantalla-principal' && idPantalla !== 'pantalla-clave');
       /* "Editar" va fijo junto a "Volver" mientras se ve un negocio. */
       mostrar($('btn-editar-barra'), idPantalla === 'pantalla-detalle');
     }
@@ -1631,6 +1726,7 @@
     }
 
     function irACrear() {
+      prepararSugerencias();
       modoEdicion = false;
       idActual = null;
       limpiarErroresCampos();
@@ -1649,6 +1745,7 @@
         return;
       }
       modoEdicion = true;
+      prepararSugerencias();
       limpiarErroresCampos();
       ['nombre', 'telefono', 'ciudad', 'departamento', 'fuente', 'tipo', 'conocimientos', 'contacto'].forEach(id => {
         const campo = $(id);
@@ -1696,6 +1793,33 @@
                         esperados.every((valor, i) => valor === actuales[i]);
 
       if (!coinciden) llenarSelect(id, opciones, marcador);
+    }
+
+    /* Sugerencias para Ciudad y Fuente: lo ya usado + fuentes habituales.
+       Siguen siendo texto libre, pero ayudan a escribir siempre igual
+       ("Google Maps" y no "Maps"), para poder medir qué canal funciona. */
+    const FUENTES = ['Instagram', 'Google Maps', 'Facebook', 'TikTok', 'WhatsApp', 'En persona', 'Referido', 'Páginas Amarillas'];
+
+    function llenarSugerencias(idLista, valores) {
+      const lista = $(idLista);
+      if (!lista) return;
+      const vistos = {};
+      lista.innerHTML = '';
+      valores.forEach(v => {
+        const t = String(v || '').trim();
+        const k = sinAcentos(t);
+        if (!t || vistos[k]) return;
+        vistos[k] = true;
+        const op = document.createElement('option');
+        op.value = t;
+        lista.appendChild(op);
+      });
+    }
+
+    function prepararSugerencias() {
+      const todos = datos.potenciales.concat(datos.clientes);
+      llenarSugerencias('lista-ciudades', todos.map(r => r.ciudad).sort((a, b) => String(a).localeCompare(String(b), 'es')));
+      llenarSugerencias('lista-fuentes', FUENTES.concat(todos.map(r => r.fuente)));
     }
 
     function prepararFormulario() {
@@ -2000,17 +2124,22 @@
       return campo ? campo.value.trim() : '';
     }
 
-    function telefonoValido(valor) {
-      const digitos = String(valor).replace(/\D/g, '');
-      return digitos.length >= 7 && digitos.length <= 15;
+    /* Teléfono colombiano en un solo formato: 10 dígitos, sin +57 ni espacios
+       ("+57 315 666 9726" -> "3156669726"). */
+    function telefonoNormal(valor) {
+      let d = soloDigitos(valor);
+      if (d.length === 12 && d.indexOf('57') === 0) d = d.slice(2);
+      return d;
     }
 
-    /* Mismo nombre (sin tildes ni mayúsculas) y mismo teléfono (solo dígitos,
-       sin el 57 inicial) = mismo negocio. */
+    /* Celular (empieza por 3) o fijo nuevo (empieza por 60), 10 dígitos. */
+    function telefonoValido(valor) {
+      return /^(3\d{9}|60\d{8})$/.test(telefonoNormal(valor));
+    }
+
+    /* Mismo teléfono = mismo negocio (aunque el nombre esté escrito distinto). */
     function claveDuplicado(registro) {
-      let tel = soloDigitos(registro.telefono);
-      if (tel.length === 12 && tel.indexOf('57') === 0) tel = tel.slice(2);
-      return sinAcentos(registro.nombre) + '|' + tel;
+      return telefonoNormal(registro.telefono);
     }
 
     /* Busca en Potenciales y en Clientes; devuelve el registro repetido. */
@@ -2050,7 +2179,7 @@
         }
       });
       if (registro.telefono && !telefonoValido(registro.telefono)) {
-        marcarErrorCampo('telefono', 'Usa entre 7 y 15 dígitos');
+        marcarErrorCampo('telefono', 'Usa 10 dígitos: celular (3…) o fijo (60…); el +57 es opcional');
         ok = false;
       }
       return ok;
@@ -2081,6 +2210,7 @@
         return false;
       }
 
+      registro.telefono = telefonoNormal(registro.telefono);
       const exceptId = modoEdicion ? idActual : null;
       const repetido = buscarDuplicado(registro, exceptId);
       if (repetido) {
@@ -2090,7 +2220,7 @@
           msg.textContent = 'Ya existe «' + repetido.registro.nombre + '» con ese teléfono en ' +
             CATEGORIAS[repetido.categoria].plural + '.';
         }
-        marcarErrorCampo('telefono', 'Teléfono ya registrado con este nombre');
+        marcarErrorCampo('telefono', 'Teléfono ya registrado');
         return false;
       }
 
@@ -2196,7 +2326,7 @@
       if (indice === -1) return;
       const clave = claveDuplicado(lista[indice]);
       if (datos.clientes.some(c => claveDuplicado(c) === clave)) {
-        avisoNube('Ya existe un cliente con el mismo nombre y teléfono.');
+        avisoNube('Ya existe un cliente con el mismo teléfono.');
         return;
       }
       const registro = lista.splice(indice, 1)[0];
@@ -2234,6 +2364,8 @@
         case 'eliminar':           pedirEliminar(); break;
         case 'confirmar-eliminar': confirmarEliminar(); break;
         case 'cancelar-eliminar':  cancelarEliminar(); break;
+        case 'entrar':             entrar(); break;
+        case 'cerrar-sesion':      cerrarSesion(); break;
       }
     }
 
@@ -2279,6 +2411,61 @@
       }
     }
 
+    /* ============================================================
+       ACCESO CON CLAVE
+    ============================================================ */
+    function borrarLocal(clave) {
+      try { window.localStorage.removeItem(clave); } catch (e) { /* visor restringido */ }
+    }
+
+    /* Muestra la pantalla de acceso. Los datos se ocultan de la memoria; la
+       copia y los cambios sin enviar siguen en el navegador para después. */
+    function pedirClave(texto) {
+      datos = { potenciales: [], clientes: [] };
+      nubeActiva = false;
+      irA('pantalla-clave');
+      const msg = $('mensaje-clave');
+      if (msg) {
+        msg.classList.toggle('error', !!texto);
+        msg.textContent = texto || '';
+      }
+      const campo = $('clave');
+      if (campo && typeof campo.focus === 'function') campo.focus();
+    }
+
+    function entrar() {
+      const campo = $('clave');
+      const valor = campo ? campo.value.trim() : '';
+      const msg = $('mensaje-clave');
+      if (!valor) {
+        if (msg) { msg.classList.add('error'); msg.textContent = 'Escribe la clave.'; }
+        return;
+      }
+      claveMemoria = valor;
+      if (!escribirLocal(ALMACEN_CLAVE, valor) && msg) {
+        msg.classList.remove('error');
+        msg.textContent = 'Este navegador no deja guardar la clave: se pedirá de nuevo al recargar.';
+      }
+      if (campo) campo.value = '';
+      datos = cargarLocal();
+      iniciarNube();
+    }
+
+    /* Borra de este equipo la clave y la copia de los datos. */
+    function cerrarSesion() {
+      if (pendientes.length) {
+        avisoNube('Hay ' + pendientes.length + ' cambio(s) sin enviar a Google Sheets. Espera a que se envíen antes de cerrar sesión.');
+        return;
+      }
+      claveMemoria = '';
+      borrarLocal(ALMACEN_CLAVE);
+      borrarLocal(ALMACEN);
+      borrarLocal(ALMACEN_PENDIENTES);
+      pedirClave('Sesión cerrada en este equipo.');
+      const msg = $('mensaje-clave');
+      if (msg) msg.classList.remove('error');
+    }
+
     async function iniciarNube() {
       if (cargandoNube) return;
       cargandoNube = true;
@@ -2292,8 +2479,13 @@
            "datos"; se mandan en una sola copia completa. */
         if (!nubeOps && pendientes.length) enviarCompleto();
         else procesarPendientes();
+        if (pantallaActual() === 'pantalla-clave') irA('pantalla-principal');
       } catch (e) {
         nubeActiva = false;
+        if (e && e.clave) {
+          pedirClave(leerClave() ? 'Clave incorrecta. Revisa la clave e inténtalo de nuevo.' : '');
+          return;
+        }
         if (!almacenamientoOk || avisoAlmacen) mostrarAvisoAlmacenamiento();
         avisoNube('No se pudo leer la hoja. Revisa que el script esté publicado como aplicación web. Mientras tanto se usa la última copia de este navegador y los cambios se enviarán al reconectar.');
       } finally {
@@ -2316,6 +2508,13 @@
         formulario.addEventListener('submit', evento => {
           evento.preventDefault();
           guardar();
+        });
+      }
+      const formClave = $('form-clave');
+      if (formClave) {
+        formClave.addEventListener('submit', evento => {
+          evento.preventDefault();
+          entrar();
         });
       }
 
