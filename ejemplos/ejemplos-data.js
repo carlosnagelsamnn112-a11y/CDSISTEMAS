@@ -1,16 +1,3 @@
-/**
- * Catálogo de ejemplos interactivos para CD Sistemas.
- * Para añadir un nuevo ejemplo, simplemente coloca el archivo HTML en esta carpeta
- * y añade un nuevo objeto al array con la siguiente estructura:
- * 
- * {
- *   titulo: "Nombre del negocio o aplicación",
- *   categoria: "Tipo de software (ej. PÁGINA WEB, APLICACIÓN, SISTEMA)",
- *   descripcion: "Breve explicación comercial de lo que hace el software y su utilidad.",
- *   archivo: "Nombre-del-archivo.html"
- * }
- */
-
 const ejemplosData = [
   {
     titulo: "Ace Club Tenis",
