@@ -1,5 +1,5 @@
 /**
- * Base de datos de "Objetivos de mercado" (Base.html) en Google Sheets.
+ * Base de datos de "Estrategia comercial" (Base.html) en Google Sheets.
  *
  * Cómo actualizar:
  *   1. Pega ESTE archivo completo en Extensiones → Apps Script (reemplaza el anterior).
@@ -10,25 +10,27 @@
  * Qué responde:
  *   GET  → { ok, version, inicializada, potenciales: [...], clientes: [...] }
  *   POST → { accion: 'guardar', categoria, registro }  crea o actualiza UNA fila (por id)
- *          { accion: 'eliminar', id }                  borra UNA fila
- *          { accion: 'reemplazar', datos }             reescribe todo (solo carga inicial)
- *          { potenciales, clientes }                   formato antiguo (= reemplazar)
+ *          { accion: 'eliminar', id }                  borra UNA fila (copia en "Eliminados")
+ *
+ * Ya NO existe ninguna acción que reescriba toda la hoja: un envío vacío,
+ * incompleto o de una versión vieja de la página se rechaza sin tocar datos.
  */
 
-var VERSION = 2;
+var VERSION = 3;
 var NOMBRE_HOJA = 'Datos';
 var CATEGORIAS = ['potenciales', 'clientes'];
+var ESTADOS = ['pendiente', 'enviado'];
 var ENCABEZADOS = [
   'categoria', 'id', 'nombre', 'telefono', 'ciudad', 'departamento',
-  'fuente', 'tipo', 'conocimientos', 'clientesSi', 'contacto', 'oferta',
-  'propuesta', 'enviados', 'creado', 'actualizado'
+  'fuente', 'tipo', 'conocimientos', 'clientesSi', 'contacto',
+  'propuesta', 'estado', 'enviado', 'creado', 'actualizado'
 ];
-/* enviados = JSON { mensaje: fecha } con los mensajes ya enviados. */
-/* Columnas antiguas (agenda / prueba) que ya no usa la página: si existen
-   en la hoja se conservan tal cual, no se borran. */
+/* estado  = 'pendiente' | 'enviado'
+   enviado = fecha ISO en que se marcó como enviado ('' si está pendiente).
+   Columnas antiguas (oferta, enviados, agenda, prueba...) que ya no usa la
+   página: si existen en la hoja se conservan tal cual, no se borran. */
 var NOMBRE_PAPELERA = 'Eliminados';
 var MAX_TEXTO = 5000;
-var MAX_REGISTROS = 5000;
 
 /* ============================================================
    HOJA Y CABECERA
@@ -131,6 +133,16 @@ function validarId(id) {
   return s;
 }
 
+/* Un registro debe traer al menos nombre y teléfono: así una petición
+   incompleta nunca deja filas vacías ni pisa una fila buena con blancos. */
+function validarRegistro(rec) {
+  if (!rec || typeof rec !== 'object') throw new Error('Registro vacío');
+  if (!String(rec.nombre || '').trim()) throw new Error('Falta el nombre');
+  if (!String(rec.telefono || '').trim()) throw new Error('Falta el teléfono');
+  rec.estado = ESTADOS.indexOf(rec.estado) === -1 ? 'pendiente' : rec.estado;
+  if (rec.estado === 'pendiente') rec.enviado = '';
+}
+
 /* previa = { valores, formulas } de la fila existente, o null si es nueva.
    Las columnas propias (que no están en ENCABEZADOS) se conservan. */
 function armarFila(cab, categoria, rec, previa) {
@@ -150,7 +162,7 @@ function armarFila(cab, categoria, rec, previa) {
 
 function guardarRegistro(categoria, rec) {
   validarCategoria(categoria);
-  if (!rec || typeof rec !== 'object') throw new Error('Registro vacío');
+  validarRegistro(rec);
   rec.id = validarId(rec.id);
 
   var sh = hoja();
@@ -202,40 +214,6 @@ function eliminarRegistro(id) {
   return { ok: true, encontrado: f !== -1 };
 }
 
-function reemplazarTodo(datos) {
-  datos = datos || {};
-  var sh = hoja();
-  var cab = cabeceraCompleta(sh);
-  var ahora = new Date().toISOString();
-  var filas = [];
-
-  CATEGORIAS.forEach(function (cat) {
-    var lista = Array.isArray(datos[cat]) ? datos[cat] : [];
-    lista.forEach(function (rec) {
-      rec = rec && typeof rec === 'object' ? rec : {};
-      rec.id = rec.id ? validarId(rec.id) : Utilities.getUuid();
-      if (!rec.creado) rec.creado = ahora;
-      if (!rec.actualizado) rec.actualizado = ahora;
-      filas.push(armarFila(cab, cat, rec, null));
-    });
-  });
-
-  if (filas.length > MAX_REGISTROS) throw new Error('Demasiados registros');
-
-  var existentes = Math.max(sh.getLastRow() - 1, 0);
-  // Protección: un envío vacío nunca borra una hoja que ya tiene datos.
-  if (!filas.length && existentes) {
-    throw new Error('Se evitó borrar toda la hoja con datos vacíos');
-  }
-
-  if (existentes) sh.getRange(2, 1, existentes, sh.getLastColumn()).clearContent();
-  if (filas.length) {
-    asegurarFilas(sh, filas.length + 1);
-    sh.getRange(2, 1, filas.length, cab.length).setValues(filas);
-  }
-  return { ok: true, total: filas.length };
-}
-
 /* ============================================================
    ENTRADAS WEB
 ============================================================ */
@@ -268,13 +246,10 @@ function doPost(e) {
     var cuerpo = e && e.postData && e.postData.contents ? e.postData.contents : '';
     if (!cuerpo) throw new Error('Petición vacía');
     var p = JSON.parse(cuerpo) || {};
-    var accion = p.accion || ((p.potenciales || p.clientes) ? 'antiguo' : '');
-    switch (accion) {
-      case 'guardar':    return guardarRegistro(p.categoria, p.registro);
-      case 'eliminar':   return eliminarRegistro(p.id);
-      case 'reemplazar': return reemplazarTodo(p.datos);
-      case 'antiguo':    return reemplazarTodo(p);
-      default:           throw new Error('Acción no reconocida');
+    switch (p.accion) {
+      case 'guardar':  return guardarRegistro(p.categoria, p.registro);
+      case 'eliminar': return eliminarRegistro(p.id);
+      default:         throw new Error('Acción no reconocida');
     }
   });
 }
