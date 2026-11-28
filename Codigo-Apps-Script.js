@@ -15,6 +15,11 @@
  *   (úsalo si la clave se filtra o al cambiar de equipo).
  *   La clave se guarda en Propiedades del script, NUNCA en el repositorio.
  *
+ * PONER UNA CLAVE PROPIA (sin tocar el código ni volver a implementar):
+ *   Configuración del proyecto (engranaje) → Propiedades de la secuencia de
+ *   comandos → Editar → en "CLAVE" escribe tu clave → Guardar.
+ *   Sin espacios al inicio ni al final; mejor 12 caracteres o más.
+ *
  * Qué responde:
  *   GET  → { ok, version, claveConfigurada }   (sin datos)
  *   POST → { accion: 'leer', clave }                         todos los registros
